@@ -255,6 +255,81 @@ function MaterialCard({ feature }: { feature: { title: string; body: string } })
   );
 }
 
+function FooterSection() {
+  return (
+    <footer className="w-full bg-[#f3ede8]">
+      <div className="mx-auto w-full max-w-6xl px-6 py-16">
+        <div className="grid gap-10 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
+          <div>
+            <p className="text-lg font-semibold text-[#1f140d]">Sfane</p>
+            <p className="mt-3 max-w-sm text-sm text-[#6a4b36]">
+              Premium duffle, sling, and tiffin carry designed for everyday
+              performance. Durable materials, refined details, and a clean
+              finish.
+            </p>
+            <div className="mt-6 flex items-center gap-3">
+              <span className="rounded-full border border-[#e7d7cc] px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-[#7b5a45]">
+                Jalandhar, IN
+              </span>
+              <span className="text-xs text-[#7b5a45]">
+                © 2026 Sfane
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-[#7b5a45]">
+              Shop
+            </p>
+            <ul className="mt-4 space-y-3 text-sm text-[#6a4b36]">
+              <li>Bestsellers</li>
+              <li>Duffle</li>
+              <li>Sling</li>
+              <li>Tiffin</li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-[#7b5a45]">
+              Company
+            </p>
+            <ul className="mt-4 space-y-3 text-sm text-[#6a4b36]">
+              <li>About</li>
+              <li>Materials & Craft</li>
+              <li>Warranty</li>
+              <li>Contact</li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-[#7b5a45]">
+              Stay Close
+            </p>
+            <p className="mt-4 text-sm text-[#6a4b36]">
+              Join the Sfane list for new drops and early access.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <input
+                type="email"
+                placeholder="Email address"
+                className="w-full rounded-full border border-[#e7d7cc] bg-white/80 px-4 py-2 text-sm text-[#1f140d] outline-none placeholder:text-[#9a7f6a]"
+              />
+              <button className="rounded-full bg-[#1f140d] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white">
+                Join
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-[#e7d7cc] pt-6 text-xs text-[#7b5a45]">
+          <span>Privacy · Terms · Shipping · Returns</span>
+          <span>support@sfane.in</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 // Pinned Product Section Component
 function PinnedProductSection() {
   const containerRef = useRef(null);
@@ -989,6 +1064,8 @@ export default function Home() {
         <BestSellersSection />
 
         <MaterialsSection />
+
+        <FooterSection />
       </main>
     </div>
   );
