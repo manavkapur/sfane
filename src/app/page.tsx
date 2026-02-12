@@ -25,6 +25,76 @@ const bodyFont = Manrope({
   weight: ["400", "500", "600"],
 });
 
+function VideoSection() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-10">
+      <div className="mx-auto max-w-3xl text-center">
+        <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
+          Brand Film
+        </p>
+        <h2 className="mt-4 text-3xl font-semibold text-[#161312] md:text-4xl">
+          Built for the daily carry.
+        </h2>
+        <p className="mt-4 text-base text-[#5a4637]">
+          A quick look at how Sfane bags move with you—gym, office, and weekend
+          travel.
+        </p>
+      </div>
+
+      <div className="mt-10">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="group relative mx-auto block w-full overflow-hidden rounded-[28px] border border-white/70 bg-[#f6f0eb] shadow-[0_25px_60px_rgba(20,12,10,0.18)]"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-black/5 via-transparent to-black/20" />
+          <video
+            src="/safneVideo.mp4"
+            preload="metadata"
+            muted
+            playsInline
+            className="h-[240px] w-full object-cover md:h-[360px]"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="flex items-center gap-3 rounded-full border border-white/60 bg-white/80 px-5 py-3 text-sm font-semibold text-[#1f140d] shadow-lg backdrop-blur-md transition group-hover:scale-[1.03]">
+              Watch the film
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1f140d] text-white">
+                ▶
+              </span>
+            </span>
+          </div>
+        </button>
+      </div>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
+          <div className="relative w-full max-w-4xl">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="absolute -top-10 right-0 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#1f140d]"
+            >
+              Close
+            </button>
+            <div className="overflow-hidden rounded-2xl bg-black shadow-[0_40px_90px_rgba(0,0,0,0.5)]">
+              <video
+                src="/safneVideo.mp4"
+                controls
+                autoPlay
+                muted
+                playsInline
+                className="h-auto w-full"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // Pinned Product Section Component
 function PinnedProductSection() {
   const containerRef = useRef(null);
@@ -758,6 +828,8 @@ export default function Home() {
 
         {/* PINNED PRODUCT SECTION */}
         <PinnedProductSection />
+
+        <VideoSection />
       </main>
     </div>
   );
