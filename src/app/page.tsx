@@ -3,21 +3,15 @@
 import Image from "next/image";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
-import { Manrope, Playfair_Display } from "next/font/google";
+import { manrope, playfairDisplay } from "@/lib/fonts";
 
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const headlineFont = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-});
+const headlineFont = playfairDisplay;
 
-const bodyFont = Manrope({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
+const bodyFont = manrope;
 
 function VideoSection() {
   const [open, setOpen] = useState(false);
@@ -89,7 +83,7 @@ function VideoSection() {
 }
 
 function BestSellersSection() {
-  const [active, setActive] = useState(null);
+  const [active, setActive] = useState<{ name: string; price: string; image: string } | null>(null);
   const items = [
     { name: "Signature Duffle", price: "₹1,299", image: "/DuffleBag.jpg" },
     { name: "City Sling", price: "₹899", image: "/SlingBag.jpg" },
@@ -638,7 +632,7 @@ export default function Home() {
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.92]);
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener("mousemove", handleMouseMove);
@@ -663,7 +657,7 @@ export default function Home() {
       opacity: 1,
       scale: 1,
       rotateX: 0,
-      transition: { delay: 0.5, duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+      transition: { delay: 0.5, duration: 0.9, ease: [0.16, 1, 0.3, 1] as const },
     },
   };
 
@@ -994,7 +988,7 @@ export default function Home() {
                 transition={{
                   delay: 1.2,
                   duration: 0.6,
-                  ease: [0.16, 1, 0.3, 1],
+                  ease: [0.16, 1, 0.3, 1] as const,
                 }}
                 whileHover={{
                   scale: 1.05,

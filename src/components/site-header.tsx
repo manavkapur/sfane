@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
-import { Cormorant_Garamond } from "next/font/google";
+import { cormorantGaramond } from "@/lib/fonts";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,10 +16,7 @@ const navItems = [
   "Tiffin",
 ];
 
-const navFont = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
+const navFont = cormorantGaramond;
 
 export function SiteHeader() {
   const { scrollY, scrollYProgress } = useScroll();
