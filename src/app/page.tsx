@@ -2,13 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState, useEffect, useRef } from "react";
-import {
-  motion,
-  useMotionValue,
-  useMotionValueEvent,
-  useScroll,
-  useTransform,
-} from "framer-motion";
+import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { Manrope, Playfair_Display } from "next/font/google";
 
 import { SiteHeader } from "@/components/site-header";
@@ -29,44 +23,43 @@ function VideoSection() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-10">
-      <div className="mx-auto max-w-3xl text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
-          Brand Film
-        </p>
-        <h2 className="mt-4 text-3xl font-semibold text-[#161312] md:text-4xl">
-          Built for the daily carry.
-        </h2>
-        <p className="mt-4 text-base text-[#5a4637]">
-          A quick look at how Sfane bags move with you—gym, office, and weekend
-          travel.
-        </p>
-      </div>
+    <section className="relative h-auto w-full overflow-hidden md:snap-start md:h-screen">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="group absolute inset-0 h-full w-full"
+      >
+        <video
+          src="/safneVideo.mp4"
+          preload="metadata"
+          muted
+          playsInline
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/50" />
 
-      <div className="mt-10">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="group relative mx-auto block w-full overflow-hidden rounded-[28px] border border-white/70 bg-[#f6f0eb] shadow-[0_25px_60px_rgba(20,12,10,0.18)]"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-black/5 via-transparent to-black/20" />
-          <video
-            src="/safneVideo.mp4"
-            preload="metadata"
-            muted
-            playsInline
-            className="h-[240px] w-full object-cover md:h-[360px]"
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="flex items-center gap-3 rounded-full border border-white/60 bg-white/80 px-5 py-3 text-sm font-semibold text-[#1f140d] shadow-lg backdrop-blur-md transition group-hover:scale-[1.03]">
+        <div className="absolute inset-0 flex items-center justify-center px-6">
+          <div className="max-w-3xl text-center text-white">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/80">
+              Brand Film
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold md:text-5xl">
+              Built for the daily carry.
+            </h2>
+            <p className="mt-4 text-base text-white/80 md:text-lg">
+              A quick look at how Sfane bags move with you—gym, office, and
+              weekend travel.
+            </p>
+
+            <span className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/60 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition group-hover:scale-[1.03]">
               Watch the film
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1f140d] text-white">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1f140d]">
                 ▶
               </span>
             </span>
           </div>
-        </button>
-      </div>
+        </div>
+      </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
@@ -95,23 +88,185 @@ function VideoSection() {
   );
 }
 
+function BestSellersSection() {
+  const [active, setActive] = useState(null);
+  const items = [
+    { name: "Signature Duffle", price: "₹1,299", image: "/DuffleBag.jpg" },
+    { name: "City Sling", price: "₹899", image: "/SlingBag.jpg" },
+    { name: "Everyday Tiffin", price: "₹749", image: "/Tiffin.jpg" },
+  ];
+
+  return (
+    <section className="flex h-auto w-full items-center md:snap-start md:h-screen">
+      <div className="mx-auto flex h-full w-full flex-col justify-center px-6">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
+              Best Sellers
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold text-[#161312] md:text-4xl">
+              The pieces everyone comes back for.
+            </h2>
+          </div>
+          <button className="rounded-full border border-[#e7d7cc] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#6a4b36]">
+            View All
+          </button>
+        </div>
+
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
+          {items.map((item) => (
+            <div
+              key={item.name}
+              className="group relative rounded-[28px] border border-[#efe6de] bg-white/80 p-6 shadow-[0_20px_50px_rgba(20,12,10,0.12)] transition hover:-translate-y-1 hover:shadow-[0_30px_70px_rgba(20,12,10,0.16)]"
+            >
+              <div className="relative h-[220px] overflow-hidden rounded-[20px] border border-[#efe6de] bg-white/90">
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  width={600}
+                  height={600}
+                  className="h-full w-full object-contain pointer-events-none"
+                />
+                <div
+                  className="absolute inset-[30%] z-20 pointer-events-auto"
+                  onMouseEnter={() => setActive(item)}
+                />
+              </div>
+              <div className="mt-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-[#1f140d]">
+                    {item.name}
+                  </h3>
+                  <p className="mt-1 text-sm text-[#6a4b36]">{item.price}</p>
+                </div>
+                <button className="rounded-full bg-[#1f140d] px-4 py-2 text-xs font-semibold text-white">
+                  Add
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {active && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+          onMouseEnter={() => setActive(active)}
+          onMouseLeave={() => setActive(null)}
+          onClick={() => setActive(null)}
+        >
+          <div className="w-full max-w-4xl">
+            <div
+              className="overflow-hidden rounded-[28px] bg-white/95 p-6 shadow-[0_40px_90px_rgba(0,0,0,0.5)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="grid gap-8 md:grid-cols-[1.1fr_0.9fr] md:items-center">
+                <div className="relative h-[340px] overflow-hidden rounded-[24px] border border-[#efe6de] bg-white">
+                  <Image
+                    src={active.image}
+                    alt={active.name}
+                    width={1200}
+                    height={900}
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
+                    Best Seller
+                  </p>
+                  <h3 className="mt-3 text-3xl font-semibold text-[#1f140d]">
+                    {active.name}
+                  </h3>
+                  <p className="mt-2 text-base text-[#6a4b36]">{active.price}</p>
+                  <p className="mt-4 text-sm text-[#5a4637]">
+                    Crafted for everyday carry with premium materials and a
+                    clean, durable finish.
+                  </p>
+                  <button className="mt-6 rounded-full bg-[#1f140d] px-6 py-3 text-sm font-semibold text-white">
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MaterialsSection() {
+  return (
+    <section className="flex h-auto w-full items-center md:snap-start md:min-h-screen">
+      <div className="mx-auto w-full px-6 pb-24 pt-10">
+        <div className="mx-auto max-w-5xl text-center">
+          <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
+            Materials & Craft
+          </p>
+          <h2 className="mt-4 text-4xl font-semibold text-[#161312] md:text-6xl">
+            Looks durable. <span className="text-[#6a4b36]">Lives ready.</span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-3xl text-base text-[#5a4637]">
+            Premium durable material. Lightweight and built with incredibly
+            durable materials, this is your go-to bag for everyday performance.
+            Material: Polyester.
+          </p>
+        </div>
+
+        <div className="relative mx-auto mt-16 flex max-w-5xl items-center justify-center">
+          <div className="absolute -inset-12 rounded-full bg-[#f7f1ec] blur-3xl" />
+          <div className="relative">
+            <Image
+              src="/Allbags.png"
+              alt="Sfane bag lineup"
+              width={720}
+              height={720}
+              className="h-auto w-full object-contain drop-shadow-[0_30px_70px_rgba(20,12,10,0.2)]"
+            />
+            <div className="absolute left-[-56px] top-1/2 -translate-y-1/2 text-sm font-semibold text-[#7b5a45] hidden md:block">
+              Durable build
+            </div>
+            <div className="absolute right-[-72px] top-1/2 -translate-y-1/2 text-sm font-semibold text-[#7b5a45] hidden md:block">
+              Lightweight
+            </div>
+            <div className="absolute left-1/2 top-[102%] -translate-x-1/2 text-sm font-semibold text-[#7b5a45] hidden md:block">
+              Polyester
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-12 max-w-4xl text-center text-sm text-[#6a4b36]">
+          Travel duffle bag is made of high quality, durable material. Our
+          tried-and-true bags just keep getting better.
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MaterialCard({ feature }: { feature: { title: string; body: string } }) {
+  return (
+    <div className="rounded-[22px] border border-[#efe6de] bg-white/70 p-6 shadow-[0_18px_40px_rgba(20,12,10,0.08)]">
+      <h3 className="text-base font-semibold text-[#1f140d]">
+        {feature.title}
+      </h3>
+      <p className="mt-3 text-sm text-[#6a4b36]">{feature.body}</p>
+    </div>
+  );
+}
+
 // Pinned Product Section Component
 function PinnedProductSection() {
   const containerRef = useRef(null);
-  const progress = useMotionValue(0);
-  const lastProgress = useRef(0);
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"],
   });
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    if (latest >= lastProgress.current) {
-      lastProgress.current = latest;
-      progress.set(latest);
-    } else {
-      progress.set(lastProgress.current);
-    }
+  const progress = useSpring(scrollYProgress, {
+    stiffness: 90,
+    damping: 20,
+    mass: 0.2,
   });
 
   const products = [
@@ -145,7 +300,7 @@ function PinnedProductSection() {
   ];
 
   return (
-    <div ref={containerRef} className="relative h-[300vh]">
+    <div ref={containerRef} className="relative h-[280vh]">
       <div className="sticky top-0 h-screen overflow-hidden">
         {/* Background */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#f6f3f1] via-[#ebe5df] to-[#f6f3f1]">
@@ -451,7 +606,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#f6f3f1] text-slate-900">
       <SiteHeader />
 
-      <main className="mx-auto w-full px-0 pb-24 pt-0">
+      <main className="mx-auto w-full px-0 pb-24 pt-0 md:snap-y md:snap-mandatory">
         {/* HERO SECTION */}
         <section
           ref={heroRef}
@@ -830,6 +985,10 @@ export default function Home() {
         <PinnedProductSection />
 
         <VideoSection />
+
+        <BestSellersSection />
+
+        <MaterialsSection />
       </main>
     </div>
   );
