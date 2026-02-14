@@ -17,7 +17,7 @@ function VideoSection() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="relative h-auto w-full overflow-hidden md:snap-start md:h-screen">
+    <section className="relative h-[68vh] min-h-[420px] w-full overflow-hidden md:snap-start md:h-screen">
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -25,7 +25,10 @@ function VideoSection() {
       >
         <video
           src="/safneVideo.mp4"
+          poster="/sfanelogo.jpg"
           preload="metadata"
+          autoPlay
+          loop
           muted
           playsInline
           className="h-full w-full object-cover"
