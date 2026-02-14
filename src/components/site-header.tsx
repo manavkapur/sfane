@@ -1,38 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { cormorantGaramond } from "@/lib/fonts";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  "Bestsellers",
-  "New Arrivals",
-  "Offers",
-  "Duffle",
-  "Sling",
-  "Tiffin",
+  { label: "Bestsellers", href: "/products" },
+  { label: "New Arrivals", href: "/products?sort=new" },
+  { label: "Offers", href: "/products?filter=offers" },
+  { label: "Duffle", href: "/categories/duffle" },
+  { label: "Sling", href: "/categories/sling" },
+  { label: "Tiffin", href: "/categories/tiffin" },
+];
+
+const compactNavItems = [
+  { label: "SHOP", href: "/products" },
+  { label: "OFFERS", href: "/products?filter=offers" },
+  { label: "CART", href: "/cart" },
 ];
 
 const navFont = cormorantGaramond;
 
 export function SiteHeader() {
-  const { scrollY, scrollYProgress } = useScroll();
+  const { scrollYProgress } = useScroll();
+  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+
   const [showStatic, setShowStatic] = useState(true);
   const [showCompact, setShowCompact] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
-    const progress = scrollYProgress.get();
-    setShowStatic(progress <= 0.02);
-    setShowCompact(progress >= 0.25);
-  }, [scrollYProgress]);
+    if (!supabase) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [supabase]);
 
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
     setShowStatic(latest <= 0.02);
     setShowCompact(latest >= 0.25);
   });
+
+  const authHref = session ? "/account" : "/login?redirect=/account";
+  const authLabel = session ? "Account" : "Login";
 
   return (
     <motion.header className="sticky top-0 z-50 w-full">
@@ -50,9 +73,9 @@ export function SiteHeader() {
       >
         <div className="mx-auto flex h-12 w-full max-w-6xl items-center px-5">
           <div className="flex flex-1 items-center">
-            <span className="text-lg font-semibold italic tracking-tight text-[#e57e2c]">
+            <Link href="/" className="text-lg font-semibold italic tracking-tight text-[#e57e2c]">
               Sfane
-            </span>
+            </Link>
           </div>
 
           <nav
@@ -62,25 +85,29 @@ export function SiteHeader() {
             )}
           >
             {navItems.map((item) => (
-              <button
-                key={item}
+              <Link
+                key={item.label}
+                href={item.href}
                 className="whitespace-nowrap transition-colors hover:text-slate-900"
               >
-                {item}
-              </button>
+                {item.label}
+              </Link>
             ))}
           </nav>
 
           <div className="flex flex-1 items-center justify-end gap-3">
-            <button className="text-slate-700 transition-colors hover:text-slate-900">
-              <SearchIcon className="h-4 w-4" />
-            </button>
-            <button className="relative text-slate-700 transition-colors hover:text-slate-900">
+            <Link href={authHref} className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-700">
+              {authLabel}
+            </Link>
+            <Link href="/admin/login" className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-700">
+              Admin
+            </Link>
+            <Link href="/cart" className="relative text-slate-700 transition-colors hover:text-slate-900">
               <BagIcon className="h-4 w-4" />
               <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[10px] text-white">
-                1
+                0
               </span>
-            </button>
+            </Link>
           </div>
         </div>
       </motion.div>
@@ -92,9 +119,7 @@ export function SiteHeader() {
         )}
         animate={{
           backgroundColor: showCompact ? "rgba(255,255,255,0.35)" : "rgba(245,245,247,0)",
-          boxShadow: showCompact
-            ? "0 10px 30px rgba(15, 23, 42, 0.08)"
-            : "0 0 0 rgba(0,0,0,0)",
+          boxShadow: showCompact ? "0 10px 30px rgba(15, 23, 42, 0.08)" : "0 0 0 rgba(0,0,0,0)",
           height: showCompact ? 44 : 0,
           opacity: showCompact ? 1 : 0,
         }}
@@ -107,9 +132,9 @@ export function SiteHeader() {
       >
         <div className="mx-auto flex h-11 w-full max-w-6xl items-center justify-between gap-6 px-5">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold italic tracking-tight text-[#e57e2c]">
+            <Link href="/" className="text-sm font-semibold italic tracking-tight text-[#e57e2c]">
               Sfane
-            </span>
+            </Link>
           </div>
 
           <div
@@ -118,40 +143,23 @@ export function SiteHeader() {
               navFont.className
             )}
           >
-            {["Bestsellers", "New Arrivals", "Duffle", "Sling", "Tiffin"].map(
-              (item) => (
-                <button
-                  key={item}
-                  className="whitespace-nowrap transition-colors hover:text-slate-900"
-                >
-                  {item}
-                </button>
-              )
-            )}
+            {compactNavItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="whitespace-nowrap transition-colors hover:text-slate-900"
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
 
-          <Button size="sm">Buy</Button>
+          <Button size="sm" asChild>
+            <Link href="/products">Buy</Link>
+          </Button>
         </div>
       </motion.div>
     </motion.header>
-  );
-}
-
-function SearchIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="M20 20l-3.5-3.5" />
-    </svg>
   );
 }
 

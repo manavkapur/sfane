@@ -779,7 +779,7 @@ export default function Home() {
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
                   <Image
-                    src="/Sfanelogo.jpg"
+                    src="/sfanelogo.jpg"
                     alt="Sfane logo"
                     width={140}
                     height={46}
