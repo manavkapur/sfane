@@ -99,9 +99,6 @@ export function SiteHeader() {
             <Link href={authHref} className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-700">
               {authLabel}
             </Link>
-            <Link href="/admin/login" className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-700">
-              Admin
-            </Link>
             <Link href="/cart" className="relative text-slate-700 transition-colors hover:text-slate-900">
               <BagIcon className="h-4 w-4" />
               <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[10px] text-white">

@@ -153,14 +153,13 @@ function formatINR(value: number) {
 export default function AdminCmsPage() {
   const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-  const adminBypass = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_ADMIN_BYPASS === "true";
 
   const [orders, setOrders] = useState<AdminOrder[]>(initialOrders);
   const [products, setProducts] = useState<AdminProduct[]>(initialProducts);
   const [offers, setOffers] = useState<AdminOffer[]>(initialOffers);
   const [coupons, setCoupons] = useState<AdminCoupon[]>(initialCoupons);
 
-  const [sessionReady, setSessionReady] = useState(adminBypass || !supabase);
+  const [sessionReady, setSessionReady] = useState(!supabase);
   const [message, setMessage] = useState<string | null>(null);
 
   const [orderFilter, setOrderFilter] = useState<"ALL" | OrderStatus>("ALL");
@@ -195,16 +194,22 @@ export default function AdminCmsPage() {
   });
 
   useEffect(() => {
-    if (adminBypass || !supabase) return;
+    if (!supabase) return;
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) {
+        router.replace("/admin/login");
+        return;
+      }
+      const { error } = await supabase.functions.invoke("admin-products", { method: "GET" });
+      if (error) {
+        await supabase.auth.signOut();
         router.replace("/admin/login");
         return;
       }
       setSessionReady(true);
     });
-  }, [adminBypass, supabase, router]);
+  }, [supabase, router]);
 
   const visibleOrders = orders.filter((order) => {
     const statusMatch = orderFilter === "ALL" || order.status === orderFilter;
@@ -363,10 +368,9 @@ export default function AdminCmsPage() {
             </Link>
             <button
               onClick={signOut}
-              disabled={adminBypass}
               className="rounded-full bg-[#1f140d] px-4 py-2 text-sm font-semibold text-white"
             >
-              {adminBypass ? "Bypass active" : "Sign out"}
+              Sign out
             </button>
           </div>
         </header>

@@ -17,10 +17,9 @@ type AdminProduct = {
 export default function AdminProductsPage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const router = useRouter();
-  const adminBypass = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_ADMIN_BYPASS === "true";
 
   const [products, setProducts] = useState<AdminProduct[]>([]);
-  const [loading, setLoading] = useState(Boolean(supabase) && !adminBypass);
+  const [loading, setLoading] = useState(Boolean(supabase));
   const [message, setMessage] = useState<string | null>(null);
 
   const [name, setName] = useState("");
@@ -46,8 +45,6 @@ export default function AdminProductsPage() {
       return;
     }
 
-    if (adminBypass) return;
-
     supabase.auth.getSession().then(async ({ data: sessionData }) => {
       if (!sessionData.session) {
         router.replace("/admin/login");
@@ -65,7 +62,7 @@ export default function AdminProductsPage() {
       setProducts((data?.products as AdminProduct[]) ?? []);
       setLoading(false);
     });
-  }, [adminBypass, supabase, router]);
+  }, [supabase, router]);
 
   const createProduct = async () => {
     if (!supabase) return;
@@ -182,8 +179,6 @@ export default function AdminProductsPage() {
           Create
         </button>
       </section>
-
-      {adminBypass ? <p className="mt-4 text-sm text-[#6a4b36]">Bypass mode enabled for local development.</p> : null}
 
       <section className="mt-6 space-y-3">
         {loading ? <p className="text-sm text-[#5b4739]">Loading products...</p> : null}
