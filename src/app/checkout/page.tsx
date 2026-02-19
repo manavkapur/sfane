@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { calculateOfferPricing } from "@/lib/offer-pricing";
@@ -352,7 +353,16 @@ export default function CheckoutPage() {
     return (
       <main className="min-h-screen bg-white">
         <div className="mx-auto max-w-5xl px-6 py-12">
-          <p className="text-sm text-[#6e6e73]">Checking session...</p>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo.jpeg"
+              alt="Sfane"
+              width={40}
+              height={40}
+              className="rounded-xl border border-[#d2d2d7] object-cover p-1"
+            />
+            <p className="text-sm text-[#6e6e73]">Checking session...</p>
+          </div>
         </div>
       </main>
     );
@@ -393,7 +403,16 @@ export default function CheckoutPage() {
 
             <div className="mt-5 space-y-4">
               {pricedItems.length === 0 ? (
-                <p className="text-sm text-[#6e6e73]">Your bag is empty.</p>
+                <div className="flex items-center gap-3 rounded-xl border border-[#ececef] bg-[#fafafa] p-3">
+                  <Image
+                    src="/logo.jpeg"
+                    alt="Sfane"
+                    width={36}
+                    height={36}
+                    className="rounded-lg border border-[#d2d2d7] object-cover p-1"
+                  />
+                  <p className="text-sm text-[#6e6e73]">Your bag is empty.</p>
+                </div>
               ) : null}
               {pricedItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-4">

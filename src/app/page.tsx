@@ -18,7 +18,7 @@ function VideoSection() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="relative h-[68vh] min-h-[420px] w-full overflow-hidden md:snap-start md:h-screen">
+    <section className="relative h-[58vh] min-h-[360px] w-full overflow-hidden sm:h-[62vh] md:snap-start md:h-screen">
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -112,8 +112,8 @@ function BestSellersSection() {
   ];
 
   return (
-    <section className="flex h-auto w-full items-center md:snap-start md:h-screen">
-      <div className="mx-auto flex h-full w-full flex-col justify-center px-6">
+    <section className="flex w-full items-start py-14 md:snap-start md:h-screen md:items-center md:py-0">
+      <div className="mx-auto flex h-full w-full flex-col justify-start px-6 md:justify-center">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
@@ -145,45 +145,47 @@ function BestSellersSection() {
             >
               <Link
                 href={`/products?category=${category.slug}`}
-                className="relative block overflow-hidden rounded-[30px] border border-[#f1dfd0]/85 bg-[linear-gradient(160deg,rgba(250,245,240,0.46),rgba(235,220,206,0.22))] shadow-[0_26px_70px_rgba(20,12,10,0.2)] backdrop-blur-md transition-all duration-300 hover:border-[#f4e7da] hover:shadow-[0_38px_95px_rgba(20,12,10,0.28)]"
+                className="relative block overflow-hidden rounded-[30px] border border-[#f1dfd0]/65 bg-[linear-gradient(160deg,rgba(250,245,240,0.28),rgba(235,220,206,0.12))] shadow-[0_26px_70px_rgba(20,12,10,0.18)] backdrop-blur-md transition-all duration-300 hover:border-[#f4e7da] hover:shadow-[0_38px_95px_rgba(20,12,10,0.24)]"
               >
-                <div className="relative h-[340px] overflow-hidden rounded-[22px] bg-[#f2e6dc]/26">
+                <div className="relative h-[340px] overflow-hidden rounded-[22px] bg-[#f2e6dc]/14">
                   <Image
                     src={category.image}
                     alt={category.name}
                     width={900}
                     height={700}
-                    className="h-full w-full object-contain p-4 transition duration-700 group-hover:scale-[0.97]"
+                    className="h-full w-full object-contain p-2 transition duration-700 group-hover:scale-[1.02]"
                   />
 
-                  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/28 to-transparent" />
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/16 to-transparent" />
 
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-b from-[#25170f]/44 via-[#2b1b12]/34 to-[#2d1f15]/56"
-                    animate={{ opacity: [0.9, 0.84, 0.9] }}
+                    className="absolute inset-0 bg-gradient-to-b from-[#25170f]/20 via-[#2b1b12]/12 to-[#2d1f15]/26"
+                    animate={{ opacity: [0.56, 0.46, 0.56] }}
                     transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
                   />
 
-                  <div className="absolute left-4 top-4 rounded-full border border-white/45 bg-[#2d1f15]/32 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.24em] text-white/90 backdrop-blur-sm">
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#1a120d]/54 via-[#1a120d]/22 to-transparent" />
+
+                  <div className="absolute left-4 top-4 rounded-full border border-white/28 bg-[#2d1f15]/22 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.24em] text-[#fff8f2]/90 backdrop-blur-sm">
                     {category.meta}
                   </div>
 
-                  <div className="absolute bottom-5 left-5 right-5 text-white">
-                    <h3 className="text-3xl font-semibold leading-none drop-shadow-[0_6px_16px_rgba(0,0,0,0.35)]">
+                  <div className="absolute bottom-5 left-5 right-5 text-[#fff8f1]">
+                    <h3 className="text-3xl font-semibold leading-none tracking-[-0.01em] text-[#fffaf6] drop-shadow-[0_8px_20px_rgba(0,0,0,0.62)]">
                       {category.name}
                     </h3>
-                    <p className="mt-2 max-w-[90%] text-sm text-white/82">
+                    <p className="mt-2 max-w-[95%] text-sm font-medium text-[#f9eee4]/92 drop-shadow-[0_5px_14px_rgba(0,0,0,0.58)]">
                       {category.blurb}
                     </p>
                   </div>
 
                   <div className="absolute inset-0 flex items-center justify-center">
                     <motion.div
-                      className="inline-flex items-center gap-3 rounded-full border border-[#fff7f0]/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.28),rgba(255,255,255,0.12))] px-5 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_14px_36px_rgba(0,0,0,0.28)] backdrop-blur-md"
+                      className="inline-flex items-center gap-3 rounded-full border border-[#f6e7d8]/78 bg-[linear-gradient(135deg,rgba(33,23,17,0.74),rgba(33,23,17,0.58))] px-5 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#fff7ef] shadow-[0_18px_44px_rgba(0,0,0,0.34)] backdrop-blur-md"
                       whileHover={{ scale: 1.04 }}
                       transition={{ type: "spring", stiffness: 360, damping: 20 }}
                     >
-                      <span>Explore category</span>
+                      <span>{`Explore ${category.name}`}</span>
                       <motion.span
                         className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#fff7ef] text-[#1f140d] shadow-[0_6px_16px_rgba(0,0,0,0.2)]"
                         animate={{ x: [0, 2, 0] }}
@@ -213,8 +215,8 @@ function BestSellersSection() {
 
 function MaterialsSection() {
   return (
-    <section className="flex h-auto w-full items-center md:snap-start md:min-h-screen">
-      <div className="mx-auto w-full px-6 pb-24 pt-10">
+    <section className="flex w-full items-start py-14 md:snap-start md:min-h-screen md:items-center md:py-0">
+      <div className="mx-auto w-full px-6 pb-16 pt-6 md:pb-24 md:pt-10">
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
             Materials & Craft
@@ -649,6 +651,7 @@ function PinnedProductSection() {
 export default function Home() {
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isDesktopHeroMotion, setIsDesktopHeroMotion] = useState(false);
   const heroRef = useRef(null);
   const showPinnedProductSection =
     process.env.NEXT_PUBLIC_ENABLE_PINNED_PRODUCT_SECTION === "true";
@@ -668,6 +671,20 @@ export default function Home() {
     };
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+    const sync = () => setIsDesktopHeroMotion(media.matches);
+    sync();
+
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", sync);
+      return () => media.removeEventListener("change", sync);
+    }
+
+    media.addListener(sync);
+    return () => media.removeListener(sync);
   }, []);
 
   const heroText = useMemo(
@@ -710,7 +727,7 @@ export default function Home() {
         {/* HERO SECTION */}
         <section
           ref={heroRef}
-          className="relative min-h-[calc(100vh-80px)] w-full overflow-hidden bg-[#f6f3f1] px-6 pt-20 md:pt-28"
+          className="relative min-h-[calc(100dvh-80px)] w-full overflow-visible bg-[#f6f3f1] px-6 pb-20 pt-20 md:min-h-[calc(100vh-80px)] md:overflow-hidden md:pb-0 md:pt-28"
           onMouseMove={(event) => {
             const rect = event.currentTarget.getBoundingClientRect();
             const x = (event.clientX - rect.left - rect.width / 2) / rect.width;
@@ -794,7 +811,11 @@ export default function Home() {
               "relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 md:grid-cols-[1.05fr_0.95fr] md:gap-20",
               bodyFont.className
             )}
-            style={{ y, opacity, scale }}
+            style={
+              isDesktopHeroMotion
+                ? { y, opacity, scale }
+                : { y: "0%", opacity: 1, scale: 1 }
+            }
           >
             <div className="max-w-xl">
               <motion.div
@@ -880,14 +901,19 @@ export default function Home() {
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
-                  <Button className="group relative overflow-hidden bg-[#1f140d] px-7 py-6 text-white shadow-lg shadow-[#1f140d]/20 transition-all duration-300 hover:bg-[#120b07] hover:shadow-xl hover:shadow-[#1f140d]/30">
-                    <span className="relative z-10">Shop Bestsellers</span>
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-[#6a4b36]/20 to-transparent"
-                      initial={{ x: "-100%" }}
-                      whileHover={{ x: "100%" }}
-                      transition={{ duration: 0.6, ease: "easeInOut" }}
-                    />
+                  <Button
+                    asChild
+                    className="group relative overflow-hidden bg-[#1f140d] px-7 py-6 text-white shadow-lg shadow-[#1f140d]/20 transition-all duration-300 hover:bg-[#120b07] hover:shadow-xl hover:shadow-[#1f140d]/30"
+                  >
+                    <Link href="/products">
+                      <span className="relative z-10">Shop now</span>
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-[#6a4b36]/20 to-transparent"
+                        initial={{ x: "-100%" }}
+                        whileHover={{ x: "100%" }}
+                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                      />
+                    </Link>
                   </Button>
                 </motion.div>
               </motion.div>
@@ -1051,7 +1077,7 @@ export default function Home() {
 
           {/* Scroll indicator */}
           <motion.div
-            className="absolute bottom-12 left-1/2 -translate-x-1/2"
+            className="absolute bottom-12 left-1/2 hidden -translate-x-1/2 md:block"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.5, duration: 0.6 }}

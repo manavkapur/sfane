@@ -253,12 +253,14 @@ export default function AdminCmsPage() {
 
   const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+  const adminLoginUrl = "/admin/login";
 
   const [orders, setOrders] = useState<AdminOrder[]>(initialOrders);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [coupons, setCoupons] = useState<AdminCoupon[]>(initialCoupons);
 
   const [sessionReady, setSessionReady] = useState(!supabase);
+  const [shouldRedirectToLogin, setShouldRedirectToLogin] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const [orderFilter, setOrderFilter] = useState<"ALL" | OrderStatus>("ALL");
@@ -311,20 +313,76 @@ export default function AdminCmsPage() {
   useEffect(() => {
     if (!supabase) return;
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) {
-        router.replace("/admin/login");
-        return;
+    let active = true;
+    const loadingFallback = window.setTimeout(() => {
+      if (!active) return;
+      setMessage("Admin session check is taking longer than expected. Redirecting to login.");
+      setShouldRedirectToLogin(true);
+    }, 7000);
+
+    const bootstrap = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!active) return;
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data.session) {
+          setShouldRedirectToLogin(true);
+          return;
+        }
+
+        const ok = await refreshProducts();
+        if (!active) return;
+        if (!ok) {
+          await supabase.auth.signOut();
+          setShouldRedirectToLogin(true);
+          return;
+        }
+
+        setSessionReady(true);
+      } catch (error) {
+        if (!active) return;
+        const text = error instanceof Error ? error.message : String(error);
+        setMessage(`Failed to check admin session: ${text}`);
+        setShouldRedirectToLogin(true);
+      } finally {
+        if (!active) return;
+        clearTimeout(loadingFallback);
       }
-      const ok = await refreshProducts();
-      if (!ok) {
-        await supabase.auth.signOut();
-        router.replace("/admin/login");
-        return;
+    };
+
+    bootstrap();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!active) return;
+      if (!nextSession) {
+        setShouldRedirectToLogin(true);
       }
-      setSessionReady(true);
     });
-  }, [supabase, router, refreshProducts]);
+
+    return () => {
+      active = false;
+      clearTimeout(loadingFallback);
+      listener.subscription.unsubscribe();
+    };
+  }, [supabase, refreshProducts]);
+
+  useEffect(() => {
+    if (!supabase || !shouldRedirectToLogin) return;
+
+    router.replace(adminLoginUrl);
+
+    const fallback = window.setTimeout(() => {
+      if (window.location.pathname !== "/admin/login") {
+        window.location.assign(adminLoginUrl);
+      }
+    }, 700);
+
+    return () => window.clearTimeout(fallback);
+  }, [supabase, shouldRedirectToLogin, router, adminLoginUrl]);
 
   const visibleOrders = orders.filter((order) => {
     const statusMatch = orderFilter === "ALL" || order.status === orderFilter;
@@ -574,7 +632,13 @@ export default function AdminCmsPage() {
   if (!sessionReady) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-[#5b4739]">Checking admin session...</p>
+        <p className="text-sm text-[#5b4739]">
+          {shouldRedirectToLogin ? "Redirecting to admin login..." : "Checking admin session..."}
+        </p>
+        <Link href={adminLoginUrl} className="mt-3 inline-block text-sm text-[#5b4739] underline">
+          Go to admin login
+        </Link>
+        {message ? <p className="mt-3 text-xs text-[#7a4d30]">{message}</p> : null}
       </main>
     );
   }

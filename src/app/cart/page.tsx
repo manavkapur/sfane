@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { calculateOfferPricing } from "@/lib/offer-pricing";
@@ -170,6 +171,7 @@ function LineItem({
 export default function CartPage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const router = useRouter();
+  const loginRedirectUrl = "/login?redirect=%2Fcart";
 
   const [session, setSession] = useState<Session | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
@@ -269,7 +271,7 @@ export default function CartPage() {
 
         if (!data.session) {
           setLoading(false);
-          router.replace("/login?redirect=/cart");
+          router.replace(loginRedirectUrl);
           return;
         }
 
@@ -295,7 +297,7 @@ export default function CartPage() {
         setSession(null);
         setItems([]);
         setLoading(false);
-        router.replace("/login?redirect=/cart");
+        router.replace(loginRedirectUrl);
         return;
       }
 
@@ -312,7 +314,21 @@ export default function CartPage() {
       clearTimeout(loadingFallback);
       listener.subscription.unsubscribe();
     };
-  }, [supabase, router, loadCart]);
+  }, [supabase, router, loadCart, loginRedirectUrl]);
+
+  useEffect(() => {
+    if (!supabase || loading || session) return;
+
+    router.replace(loginRedirectUrl);
+
+    const fallback = window.setTimeout(() => {
+      if (window.location.pathname !== "/login") {
+        window.location.assign(loginRedirectUrl);
+      }
+    }, 700);
+
+    return () => window.clearTimeout(fallback);
+  }, [supabase, loading, session, router, loginRedirectUrl]);
 
   const onQtyChange = async (itemId: number, nextQty: number) => {
     if (!supabase) return;
@@ -429,6 +445,13 @@ export default function CartPage() {
       <main className="min-h-screen bg-[#f5f5f7]">
         <section className="mx-auto w-full max-w-5xl px-6 py-16 md:py-20">
           <div className="max-w-3xl">
+            <Image
+              src="/logo.jpeg"
+              alt="Sfane"
+              width={72}
+              height={72}
+              className="mb-6 rounded-2xl border border-[#d2d2d7] bg-white object-cover p-1"
+            />
             <h1 className="text-5xl font-semibold tracking-tight text-[#1d1d1f] md:text-6xl">
               Loading your bag...
             </h1>
@@ -466,6 +489,13 @@ export default function CartPage() {
       <main className="min-h-screen bg-[#f5f5f7]">
         <section className="mx-auto w-full max-w-5xl px-6 py-16 md:py-20">
           <div className="max-w-3xl">
+            <Image
+              src="/logo.jpeg"
+              alt="Sfane"
+              width={88}
+              height={88}
+              className="mb-6 rounded-2xl border border-[#d2d2d7] bg-white object-cover p-1"
+            />
             <h1 className="text-5xl font-semibold tracking-tight text-[#1d1d1f] md:text-6xl">
               Your bag is empty.
             </h1>
@@ -554,6 +584,13 @@ export default function CartPage() {
         <section className="mx-auto mt-12 max-w-3xl">
           {items.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-10 text-center text-sm text-slate-600">
+              <Image
+                src="/logo.jpeg"
+                alt="Sfane"
+                width={64}
+                height={64}
+                className="mx-auto mb-3 rounded-2xl border border-slate-200 object-cover p-1"
+              />
               Your bag is empty.
             </div>
           ) : (
