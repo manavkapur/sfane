@@ -837,8 +837,8 @@ export default function Home() {
                 custom={2}
                 variants={heroText}
               >
-                Premium duffle, sling, and tiffin gear made for gym days, office runs, and quick
-                getaways. Clean lines, durable builds, and a confident finish.
+                Premium duffle, toiletry kits , and tiffin gear made for gym days, office runs,
+                and quick getaways. Clean lines, durable builds, and a confident finish.
               </motion.p>
 
               <motion.div
@@ -1017,7 +1017,6 @@ export default function Home() {
                   </motion.div>
                   <div>
                     <div className="text-xs font-semibold text-[#1f140d]">Premium Build</div>
-                    <div className="text-[10px] text-[#6a4b36]/70">2-Year Warranty</div>
                   </div>
                 </div>
               </motion.div>
