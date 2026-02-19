@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { motion, useMotionValueEvent, useScroll } from "framer-motion";
+import { useMotionValueEvent, useScroll } from "framer-motion";
 import { cormorantGaramond } from "@/lib/fonts";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -11,152 +11,128 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { label: "Bestsellers", href: "/products" },
-  { label: "New Arrivals", href: "/products?sort=new" },
   { label: "Offers", href: "/products?filter=offers" },
-  { label: "Duffle", href: "/products?category=duffle" },
+  { label: "Duffle Bags", href: "/products?category=duffle" },
   { label: "Toiletry Kit", href: "/products?category=toiletry-kit" },
-  { label: "Tiffin", href: "/products?category=tiffin" },
-];
-
-const compactNavItems = [
-  { label: "SHOP", href: "/products" },
-  { label: "OFFERS", href: "/products?filter=offers" },
-  { label: "CART", href: "/cart" },
+  { label: "Tiffin Bag", href: "/products?category=tiffin" },
 ];
 
 const navFont = cormorantGaramond;
 
 export function SiteHeader() {
-  const { scrollYProgress } = useScroll();
+  const { scrollY } = useScroll();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
 
-  const [showStatic, setShowStatic] = useState(true);
-  const [showCompact, setShowCompact] = useState(false);
+  const [isCompact, setIsCompact] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.scrollY > 80;
+  });
   const [session, setSession] = useState<Session | null>(null);
+  const [cartCount, setCartCount] = useState(0);
+
+  const loadCartCount = useCallback(
+    async (userId: string | null) => {
+      if (!supabase || !userId) {
+        setCartCount(0);
+        return;
+      }
+
+      const { data: activeCart, error: cartError } = await supabase
+        .from("carts")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "ACTIVE")
+        .maybeSingle();
+
+      if (cartError || !activeCart) {
+        setCartCount(0);
+        return;
+      }
+
+      const { data: rows, error: itemsError } = await supabase
+        .from("cart_items")
+        .select("quantity")
+        .eq("cart_id", activeCart.id);
+
+      if (itemsError) {
+        setCartCount(0);
+        return;
+      }
+
+      const qty = (rows || []).reduce((sum, row) => sum + (row.quantity || 0), 0);
+      setCartCount(qty);
+    },
+    [supabase]
+  );
 
   useEffect(() => {
     if (!supabase) return;
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
+      await loadCartCount(data.session?.user?.id ?? null);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       setSession(nextSession);
+      await loadCartCount(nextSession?.user?.id ?? null);
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [supabase]);
+  }, [supabase, loadCartCount]);
 
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    setShowStatic(latest <= 0.02);
-    setShowCompact(latest >= 0.25);
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setIsCompact(latest > 80);
   });
 
   const authHref = session ? "/account" : "/login?redirect=/account";
   const authLabel = session ? "Account" : "Login";
 
   return (
-    <motion.header className="sticky top-0 z-50 w-full">
-      <motion.div
-        className="border-b border-slate-200/60 bg-[#f5f5f7]"
-        animate={{
-          height: showStatic ? 48 : 0,
-          opacity: showStatic ? 1 : 0,
-        }}
-        transition={{ duration: 0.18 }}
-        style={{
-          overflow: "hidden",
-          pointerEvents: showStatic ? "auto" : "none",
-        }}
-      >
-        <div className="mx-auto flex h-12 w-full max-w-6xl items-center px-5">
-          <div className="flex flex-1 items-center">
-            <Link href="/" className="text-lg font-semibold italic tracking-tight text-[#e57e2c]">
-              Sfane
-            </Link>
-          </div>
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200/70 bg-white/35 backdrop-blur-2xl backdrop-saturate-150">
+      <div className="mx-auto flex h-12 w-full max-w-6xl items-center justify-between gap-4 px-5">
+        <div className="flex flex-1 items-center">
+          <Link href="/" className="text-lg font-semibold italic tracking-tight text-[#e57e2c]">
+            Sfane
+          </Link>
+        </div>
 
-          <nav
-            className={cn(
-              "hidden flex-1 items-center justify-center gap-5 text-[13px] tracking-[0.04em] text-slate-700 md:flex",
-              navFont.className
-            )}
-          >
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="whitespace-nowrap transition-colors hover:text-slate-900"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex flex-1 items-center justify-end gap-3">
-            <Link href={authHref} className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-700">
-              {authLabel}
+        <nav
+          className={cn(
+            "hidden flex-1 items-center justify-center gap-7 md:flex",
+            navFont.className
+          )}
+        >
+          {navItems.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className="whitespace-nowrap text-[12px] font-semibold uppercase tracking-[0.18em] text-[#5d4b3c] transition-colors duration-200 hover:text-[#1f140d]"
+            >
+              {item.label}
             </Link>
+          ))}
+        </nav>
+
+        <div className="flex flex-1 items-center justify-end gap-3">
+          <Link href={authHref} className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-700">
+            {authLabel}
+          </Link>
+          {!isCompact ? (
             <Link href="/cart" className="relative text-slate-700 transition-colors hover:text-slate-900">
               <BagIcon className="h-4 w-4" />
               <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[10px] text-white">
-                0
+                {cartCount}
               </span>
             </Link>
-          </div>
+          ) : (
+            <Button size="sm" asChild>
+              <Link href="/products">Buy</Link>
+            </Button>
+          )}
         </div>
-      </motion.div>
-
-      <motion.div
-        className={cn(
-          "border-b border-transparent bg-white/30 backdrop-blur-3xl backdrop-saturate-150",
-          showCompact && "border-slate-200/70"
-        )}
-        animate={{
-          backgroundColor: showCompact ? "rgba(255,255,255,0.35)" : "rgba(245,245,247,0)",
-          boxShadow: showCompact ? "0 10px 30px rgba(15, 23, 42, 0.08)" : "0 0 0 rgba(0,0,0,0)",
-          height: showCompact ? 44 : 0,
-          opacity: showCompact ? 1 : 0,
-        }}
-        transition={{ duration: 0.2 }}
-        style={{
-          backdropFilter: showCompact ? "blur(30px)" : "blur(0px)",
-          overflow: "hidden",
-          pointerEvents: showCompact ? "auto" : "none",
-        }}
-      >
-        <div className="mx-auto flex h-11 w-full max-w-6xl items-center justify-between gap-6 px-5">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-sm font-semibold italic tracking-tight text-[#e57e2c]">
-              Sfane
-            </Link>
-          </div>
-
-          <div
-            className={cn(
-              "hidden items-center gap-6 text-xs tracking-[0.06em] text-slate-600 md:flex",
-              navFont.className
-            )}
-          >
-            {compactNavItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="whitespace-nowrap transition-colors hover:text-slate-900"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-
-          <Button size="sm" asChild>
-            <Link href="/products">Buy</Link>
-          </Button>
-        </div>
-      </motion.div>
-    </motion.header>
+      </div>
+    </header>
   );
 }
 
