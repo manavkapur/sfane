@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -29,18 +29,28 @@ type AdminProduct = {
   stock: number;
   active: boolean;
   imageUrl: string;
-  offerId: number | null;
+  offerType: "NONE" | "PERCENT" | "FIXED" | "BUY_X_GET_Y";
+  discountValue: number | null;
+  buyQty: number | null;
+  getQty: number | null;
+  discountStart: string | null;
+  discountEnd: string | null;
 };
 
-type AdminOffer = {
+type AdminProductRow = {
   id: number;
-  title: string;
-  type: OfferType;
-  value: number;
-  startAt: string;
-  endAt: string;
+  name: string;
+  slug: string;
+  price: number | string;
   active: boolean;
-  productIds: number[];
+  product_images: Array<{ image_url: string }> | null;
+  product_categories: Array<{ categories: { name: string } | null }> | null;
+  offer_type: string | null;
+  discount_percent: number | null;
+  buy_qty: number | null;
+  get_qty: number | null;
+  discount_start: string | null;
+  discount_end: string | null;
 };
 
 type AdminCoupon = {
@@ -89,44 +99,6 @@ const initialOrders: AdminOrder[] = [
   },
 ];
 
-const initialProducts: AdminProduct[] = [
-  {
-    id: 1001,
-    name: "Sfane Polyester Grey Duffle / Shoulder / Gym Bag",
-    slug: "sfane-polyester-grey-duffle",
-    price: 414,
-    category: "Gym Bags",
-    stock: 250,
-    active: true,
-    imageUrl: "/sfanelogo.jpg",
-    offerId: 1,
-  },
-  {
-    id: 1002,
-    name: "City Sling",
-    slug: "city-sling",
-    price: 899,
-    category: "Sling Bags",
-    stock: 120,
-    active: true,
-    imageUrl: "/SlingBag.jpg",
-    offerId: null,
-  },
-];
-
-const initialOffers: AdminOffer[] = [
-  {
-    id: 1,
-    title: "Weekend Launch Offer",
-    type: "PERCENT",
-    value: 65,
-    startAt: "2026-02-13T00:00",
-    endAt: "2026-02-16T23:59",
-    active: true,
-    productIds: [1001],
-  },
-];
-
 const initialCoupons: AdminCoupon[] = [
   {
     id: 1,
@@ -150,13 +122,140 @@ function formatINR(value: number) {
   }).format(value);
 }
 
+function mapBackendProductToAdminProduct(product: AdminProductRow): AdminProduct {
+  const category =
+    product.product_categories
+      ?.map((item) => item.categories?.name)
+      .filter(Boolean)
+      .join(", ") || "Uncategorized";
+
+  return {
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    price: Number(product.price),
+    category,
+    stock: 0,
+    active: product.active,
+    imageUrl: product.product_images?.[0]?.image_url || "/sfanelogo.jpg",
+    offerType:
+      product.offer_type === "PERCENT" || product.offer_type === "FIXED" || product.offer_type === "BUY_X_GET_Y"
+        ? product.offer_type
+        : "NONE",
+    discountValue: product.discount_percent,
+    buyQty: product.buy_qty,
+    getQty: product.get_qty,
+    discountStart: product.discount_start,
+    discountEnd: product.discount_end,
+  };
+}
+
+function parseFlexibleNumber(value: string) {
+  const normalized = value.replace(/[,%₹\s]/g, "").trim();
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toIsoDateTimeOrNull(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const direct = new Date(trimmed);
+  if (!Number.isNaN(direct.getTime())) {
+    return direct.toISOString();
+  }
+
+  const match = trimmed.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?:\s*([AaPp][Mm]))?$/
+  );
+  if (!match) {
+    throw new Error(`Invalid date/time: "${value}". Please use the picker.`);
+  }
+
+  const [, dd, mm, yyyy, hhRaw, min, ampm] = match;
+  let hh = Number(hhRaw);
+  if (!Number.isFinite(hh)) {
+    throw new Error(`Invalid hour in date/time: "${value}".`);
+  }
+
+  if (ampm) {
+    const upper = ampm.toUpperCase();
+    if (upper === "AM" && hh == 12) hh = 0;
+    if (upper == "PM" && hh < 12) hh += 12;
+  }
+
+  const parsed = new Date(Number(yyyy), Number(mm) - 1, Number(dd), hh, Number(min), 0, 0);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`Invalid date/time: "${value}". Please use the picker.`);
+  }
+
+  return parsed.toISOString();
+}
+
+async function extractFunctionErrorMessage(
+  error:
+    | {
+        message?: string;
+        name?: string;
+        context?: Response;
+        response?: Response;
+        status?: number;
+        details?: string;
+      }
+    | null
+) {
+  if (!error) return "Unknown function error";
+
+  const response =
+    error.context ??
+    error.response ??
+    ((error as unknown as { cause?: { context?: Response; response?: Response } })?.cause?.context ??
+      (error as unknown as { cause?: { context?: Response; response?: Response } })?.cause?.response);
+
+  const status = response?.status ?? error.status ?? null;
+  const prefix = error.name ? `${error.name}` : "Function error";
+
+  if (response) {
+    try {
+      const textValue = await response.clone().text();
+      if (textValue) {
+        try {
+          const body = JSON.parse(textValue);
+          const backendError =
+            typeof body?.error === "string"
+              ? body.error
+              : typeof body?.message === "string"
+              ? body.message
+              : textValue;
+          return `${prefix}${status ? ` (${status})` : ""}: ${backendError}`;
+        } catch {
+          return `${prefix}${status ? ` (${status})` : ""}: ${textValue}`;
+        }
+      }
+    } catch {
+      // Fall through to message/details fallback.
+    }
+  }
+
+  if (error.details) {
+    return `${prefix}${status ? ` (${status})` : ""}: ${error.details}`;
+  }
+
+  if (error.message) {
+    return `${prefix}${status ? ` (${status})` : ""}: ${error.message}`;
+  }
+
+  return `${prefix}${status ? ` (${status})` : ""}`;
+}
+
 export default function AdminCmsPage() {
+
   const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
 
   const [orders, setOrders] = useState<AdminOrder[]>(initialOrders);
-  const [products, setProducts] = useState<AdminProduct[]>(initialProducts);
-  const [offers, setOffers] = useState<AdminOffer[]>(initialOffers);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
   const [coupons, setCoupons] = useState<AdminCoupon[]>(initialCoupons);
 
   const [sessionReady, setSessionReady] = useState(!supabase);
@@ -171,7 +270,7 @@ export default function AdminCmsPage() {
     price: "",
     category: "",
     stock: "",
-    imageUrl: "/sfanelogo.jpg",
+    imageUrls: ["", "", "", "", ""],
   });
 
   const [newOffer, setNewOffer] = useState({
@@ -180,6 +279,8 @@ export default function AdminCmsPage() {
     value: "",
     startAt: "",
     endAt: "",
+    buyQty: "",
+    getQty: "",
     productIds: [] as number[],
   });
 
@@ -193,6 +294,20 @@ export default function AdminCmsPage() {
     endAt: "",
   });
 
+  const refreshProducts = useCallback(async () => {
+    if (!supabase) return false;
+
+    const { data, error } = await supabase.functions.invoke("admin-products", { method: "GET" });
+    if (error) {
+      setMessage(error.message);
+      return false;
+    }
+
+    const rows = (data?.products ?? []) as AdminProductRow[];
+    setProducts(rows.map(mapBackendProductToAdminProduct));
+    return true;
+  }, [supabase]);
+
   useEffect(() => {
     if (!supabase) return;
 
@@ -201,15 +316,15 @@ export default function AdminCmsPage() {
         router.replace("/admin/login");
         return;
       }
-      const { error } = await supabase.functions.invoke("admin-products", { method: "GET" });
-      if (error) {
+      const ok = await refreshProducts();
+      if (!ok) {
         await supabase.auth.signOut();
         router.replace("/admin/login");
         return;
       }
       setSessionReady(true);
     });
-  }, [supabase, router]);
+  }, [supabase, router, refreshProducts]);
 
   const visibleOrders = orders.filter((order) => {
     const statusMatch = orderFilter === "ALL" || order.status === orderFilter;
@@ -223,85 +338,195 @@ export default function AdminCmsPage() {
   });
 
   const revenue = orders.filter((o) => o.paymentStatus === "paid").reduce((sum, o) => sum + o.total, 0);
+  const activeOfferProducts = products.filter((product) => product.offerType !== "NONE");
 
   const updateOrderStatus = (orderId: number, status: OrderStatus) => {
     setOrders((prev) => prev.map((order) => (order.id === orderId ? { ...order, status } : order)));
     setMessage(`Order #${orderId} marked as ${status}.`);
   };
 
-  const createProduct = () => {
+  const createProduct = async () => {
+    if (!supabase) return;
+
+    setMessage(null);
     const price = Number(newProduct.price);
-    const stock = Number(newProduct.stock);
-    if (!newProduct.name || !newProduct.slug || !Number.isFinite(price) || !Number.isFinite(stock)) {
-      setMessage("Product name, slug, price, and stock are required.");
+    if (!newProduct.name || !newProduct.slug || !Number.isFinite(price)) {
+      setMessage("Product name, slug, and price are required.");
       return;
     }
 
-    const nextId = Math.max(...products.map((p) => p.id), 1000) + 1;
-    const product: AdminProduct = {
-      id: nextId,
-      name: newProduct.name,
-      slug: newProduct.slug,
-      price,
-      category: newProduct.category || "Uncategorized",
-      stock,
-      active: true,
-      imageUrl: newProduct.imageUrl || "/sfanelogo.jpg",
-      offerId: null,
-    };
+    const createdName = newProduct.name;
+    const imageUrls = newProduct.imageUrls.map((value) => value.trim()).filter(Boolean).slice(0, 5);
+    const { error } = await supabase.functions.invoke("admin-products", {
+      method: "POST",
+      body: {
+        action: "create",
+        product: {
+          name: newProduct.name,
+          slug: newProduct.slug,
+          price,
+          images: imageUrls,
+        },
+      },
+    });
 
-    setProducts((prev) => [product, ...prev]);
-    setNewProduct({ name: "", slug: "", price: "", category: "", stock: "", imageUrl: "/sfanelogo.jpg" });
-    setMessage(`Product ${product.name} created.`);
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setNewProduct({ name: "", slug: "", price: "", category: "", stock: "", imageUrls: ["", "", "", "", ""] });
+    setMessage(`Product ${createdName} created.`);
+    await refreshProducts();
   };
 
-  const removeProduct = (productId: number) => {
-    setProducts((prev) => prev.filter((product) => product.id !== productId));
-    setOffers((prev) => prev.map((offer) => ({ ...offer, productIds: offer.productIds.filter((id) => id !== productId) })));
+  const removeProduct = async (productId: number) => {
+    if (!supabase) return;
+
+    const { error } = await supabase.functions.invoke("admin-products", {
+      method: "POST",
+      body: { action: "delete", product: { id: productId } },
+    });
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    await refreshProducts();
     setMessage(`Product #${productId} removed.`);
   };
 
-  const toggleProductActive = (productId: number) => {
-    setProducts((prev) =>
-      prev.map((product) => (product.id === productId ? { ...product, active: !product.active } : product))
-    );
-  };
+  const toggleProductActive = async (productId: number) => {
+    if (!supabase) return;
 
-  const assignOfferToProduct = (productId: number, offerId: number | null) => {
-    setProducts((prev) => prev.map((product) => (product.id === productId ? { ...product, offerId } : product)));
-  };
+    const current = products.find((product) => product.id === productId);
+    if (!current) return;
 
-  const createOffer = () => {
-    const value = Number(newOffer.value);
-    if (!newOffer.title || !Number.isFinite(value) || !newOffer.startAt || !newOffer.endAt) {
-      setMessage("Offer title, value, start and end date are required.");
+    const { error } = await supabase.functions.invoke("admin-products", {
+      method: "POST",
+      body: {
+        action: "update",
+        product: { id: productId, active: !current.active },
+      },
+    });
+
+    if (error) {
+      setMessage(error.message);
       return;
     }
 
-    const nextId = Math.max(...offers.map((o) => o.id), 0) + 1;
-    const offer: AdminOffer = {
-      id: nextId,
-      title: newOffer.title,
-      type: newOffer.type,
-      value,
-      startAt: newOffer.startAt,
-      endAt: newOffer.endAt,
-      active: true,
-      productIds: newOffer.productIds,
-    };
-
-    setOffers((prev) => [offer, ...prev]);
-    setNewOffer({ title: "", type: "PERCENT", value: "", startAt: "", endAt: "", productIds: [] });
-    setMessage(`Offer ${offer.title} created.`);
+    await refreshProducts();
   };
 
-  const toggleOfferActive = (offerId: number) => {
-    setOffers((prev) => prev.map((offer) => (offer.id === offerId ? { ...offer, active: !offer.active } : offer)));
+  const createOffer = async () => {
+    if (!supabase) return;
+
+    setMessage(null);
+
+    if (!newOffer.title.trim()) {
+      setMessage("Offer title is required.");
+      return;
+    }
+
+    if (newOffer.productIds.length === 0) {
+      setMessage("Select at least one product for this offer.");
+      return;
+    }
+
+    const normalizedType = newOffer.type.toUpperCase() as OfferType;
+    const value = parseFlexibleNumber(newOffer.value);
+    const buyQty = parseFlexibleNumber(newOffer.buyQty);
+    const getQty = parseFlexibleNumber(newOffer.getQty);
+
+    if (normalizedType === "PERCENT" && (value === null || value <= 0 || value > 100)) {
+      setMessage("Percent offer requires value between 1 and 100.");
+      return;
+    }
+
+    if (normalizedType === "FIXED" && (value === null || value <= 0)) {
+      setMessage("Fixed offer requires amount greater than 0.");
+      return;
+    }
+
+    if (
+      normalizedType === "BUY_X_GET_Y" &&
+      (buyQty === null || buyQty <= 0 || getQty === null || getQty <= 0)
+    ) {
+      setMessage("Buy X Get Y requires valid buy and get quantities.");
+      return;
+    }
+
+    let discountStart: string | null = null;
+    let discountEnd: string | null = null;
+
+    try {
+      discountStart = toIsoDateTimeOrNull(newOffer.startAt);
+      discountEnd = toIsoDateTimeOrNull(newOffer.endAt);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+      return;
+    }
+
+    if (discountStart && discountEnd && new Date(discountStart) > new Date(discountEnd)) {
+      setMessage("Offer end date/time must be after start date/time.");
+      return;
+    }
+
+    for (const productId of newOffer.productIds) {
+      const { error } = await supabase.functions.invoke("admin-products", {
+        method: "POST",
+        body: {
+          action: "update",
+          product: {
+            id: productId,
+            offer_type: normalizedType,
+            discount_percent: normalizedType === "BUY_X_GET_Y" ? null : value,
+            buy_qty: normalizedType === "BUY_X_GET_Y" ? buyQty : null,
+            get_qty: normalizedType === "BUY_X_GET_Y" ? getQty : null,
+            discount_start: discountStart,
+            discount_end: discountEnd,
+          },
+        },
+      });
+
+      if (error) {
+        const details = await extractFunctionErrorMessage(error as { message?: string; context?: Response });
+        setMessage(`Failed applying offer to product ${productId}: ${details}`);
+        return;
+      }
+    }
+
+    setNewOffer({ title: "", type: "PERCENT", value: "", startAt: "", endAt: "", buyQty: "", getQty: "", productIds: [] });
+    setMessage("Offer applied to selected products.");
+    await refreshProducts();
   };
 
-  const removeOffer = (offerId: number) => {
-    setOffers((prev) => prev.filter((offer) => offer.id !== offerId));
-    setProducts((prev) => prev.map((product) => (product.offerId === offerId ? { ...product, offerId: null } : product)));
+  const removeOfferFromProduct = async (productId: number) => {
+    if (!supabase) return;
+
+    const { error } = await supabase.functions.invoke("admin-products", {
+      method: "POST",
+      body: {
+        action: "update",
+        product: {
+          id: productId,
+          offer_type: "NONE",
+          discount_percent: null,
+          buy_qty: null,
+          get_qty: null,
+          discount_start: null,
+          discount_end: null,
+        },
+      },
+    });
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setMessage(`Offer removed from product #${productId}.`);
+    await refreshProducts();
   };
 
   const createCoupon = () => {
@@ -495,12 +720,20 @@ export default function AdminCmsPage() {
                 placeholder="Category"
                 className="rounded-full border border-[#d0d0d0] px-4 py-2 text-sm"
               />
-              <input
-                value={newProduct.imageUrl}
-                onChange={(e) => setNewProduct((prev) => ({ ...prev, imageUrl: e.target.value }))}
-                placeholder="Image URL"
-                className="rounded-full border border-[#d0d0d0] px-4 py-2 text-sm"
-              />
+              {newProduct.imageUrls.map((imageUrl, index) => (
+                <input
+                  key={`cms-image-url-${index}`}
+                  value={imageUrl}
+                  onChange={(e) =>
+                    setNewProduct((prev) => ({
+                      ...prev,
+                      imageUrls: prev.imageUrls.map((item, itemIndex) => (itemIndex === index ? e.target.value : item)),
+                    }))
+                  }
+                  placeholder={`Image URL ${index + 1}${index === 0 ? " (primary)" : ""}`}
+                  className="rounded-full border border-[#d0d0d0] px-4 py-2 text-sm"
+                />
+              ))}
             </div>
             <button
               onClick={createProduct}
@@ -516,7 +749,7 @@ export default function AdminCmsPage() {
                     <div>
                       <p className="font-semibold text-[#1f140d]">{product.name}</p>
                       <p className="text-sm text-[#333333]">
-                        {formatINR(product.price)} · Stock {product.stock} · {product.category}
+                        {formatINR(product.price)} · {product.category} · {product.active ? "Active" : "Inactive"}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -534,20 +767,14 @@ export default function AdminCmsPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-3">
-                    <select
-                      value={product.offerId ?? ""}
-                      onChange={(e) => assignOfferToProduct(product.id, e.target.value ? Number(e.target.value) : null)}
-                      className="rounded-full border border-[#d0d0d0] px-3 py-1 text-xs"
-                    >
-                      <option value="">No offer</option>
-                      {offers.map((offer) => (
-                        <option key={offer.id} value={offer.id}>
-                          {offer.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {product.offerType !== "NONE" ? (
+                    <p className="mt-2 text-xs font-medium text-[#1f7a34]">
+                      Offer:{" "}
+                      {product.offerType === "BUY_X_GET_Y"
+                        ? `Buy ${product.buyQty} Get ${product.getQty}`
+                        : `${product.offerType} ${product.discountValue ?? 0}`}
+                    </p>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -571,12 +798,31 @@ export default function AdminCmsPage() {
                 <option value="FIXED">Fixed</option>
                 <option value="BUY_X_GET_Y">Buy X Get Y</option>
               </select>
-              <input
-                value={newOffer.value}
-                onChange={(e) => setNewOffer((prev) => ({ ...prev, value: e.target.value }))}
-                placeholder="Value"
-                className="rounded-full border border-[#d0d0d0] px-4 py-2 text-sm"
-              />
+
+              {newOffer.type === "BUY_X_GET_Y" ? (
+                <>
+                  <input
+                    value={newOffer.buyQty}
+                    onChange={(e) => setNewOffer((prev) => ({ ...prev, buyQty: e.target.value }))}
+                    placeholder="Buy quantity (X)"
+                    className="rounded-full border border-[#d0d0d0] px-4 py-2 text-sm"
+                  />
+                  <input
+                    value={newOffer.getQty}
+                    onChange={(e) => setNewOffer((prev) => ({ ...prev, getQty: e.target.value }))}
+                    placeholder="Free quantity (Y)"
+                    className="rounded-full border border-[#d0d0d0] px-4 py-2 text-sm"
+                  />
+                </>
+              ) : (
+                <input
+                  value={newOffer.value}
+                  onChange={(e) => setNewOffer((prev) => ({ ...prev, value: e.target.value }))}
+                  placeholder={newOffer.type === "PERCENT" ? "Discount % (x)" : "Fixed amount off (₹)"}
+                  className="rounded-full border border-[#d0d0d0] px-4 py-2 text-sm"
+                />
+              )}
+
               <input
                 type="datetime-local"
                 value={newOffer.startAt}
@@ -618,37 +864,40 @@ export default function AdminCmsPage() {
               onClick={createOffer}
               className="mt-4 rounded-full bg-[#1f140d] px-4 py-2 text-sm font-semibold text-white"
             >
-              Add offer
+              Apply offer
             </button>
 
+            {message ? <p className="mt-3 text-sm text-[#9f2626]">{message}</p> : null}
+
             <div className="mt-5 space-y-3">
-              {offers.map((offer) => (
-                <div key={offer.id} className="rounded-2xl border border-[#e7e7e7] p-4">
+              {activeOfferProducts.map((product) => (
+                <div key={`offer-${product.id}`} className="rounded-2xl border border-[#e7e7e7] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="font-semibold text-[#1f140d]">{offer.title}</p>
+                      <p className="font-semibold text-[#1f140d]">{product.name}</p>
                       <p className="text-sm text-[#333333]">
-                        {offer.type} · {offer.value} · {new Date(offer.startAt).toLocaleString("en-IN")} to{" "}
-                        {new Date(offer.endAt).toLocaleString("en-IN")}
+                        {product.offerType === "BUY_X_GET_Y"
+                          ? `BUY_X_GET_Y · Buy ${product.buyQty} Get ${product.getQty}`
+                          : `${product.offerType} · ${product.discountValue ?? 0}`}
+                      </p>
+                      <p className="text-xs text-[#555555]">
+                        {product.discountStart ? new Date(product.discountStart).toLocaleString("en-IN") : "No start"} to{" "}
+                        {product.discountEnd ? new Date(product.discountEnd).toLocaleString("en-IN") : "No end"}
                       </p>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => toggleOfferActive(offer.id)}
-                        className="rounded-full border border-[#d0d0d0] px-3 py-1 text-xs font-semibold text-[#333333]"
-                      >
-                        {offer.active ? "Pause" : "Activate"}
-                      </button>
-                      <button
-                        onClick={() => removeOffer(offer.id)}
-                        className="rounded-full border border-[#efc5c5] px-3 py-1 text-xs font-semibold text-[#9f2626]"
-                      >
-                        Remove
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => removeOfferFromProduct(product.id)}
+                      className="rounded-full border border-[#efc5c5] px-3 py-1 text-xs font-semibold text-[#9f2626]"
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
               ))}
+
+              {!activeOfferProducts.length ? (
+                <p className="text-sm text-[#555555]">No active product offers.</p>
+              ) : null}
             </div>
           </article>
         </section>
@@ -743,7 +992,6 @@ export default function AdminCmsPage() {
           </div>
         </section>
 
-        {message ? <p className="text-sm text-[#333333]">{message}</p> : null}
       </div>
     </main>
   );

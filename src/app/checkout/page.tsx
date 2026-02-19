@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { MOCK_CART, cartSubtotal, formatINR } from "@/lib/checkout-mock";
+import { calculateOfferPricing } from "@/lib/offer-pricing";
 
 type FormState = {
   firstName: string;
@@ -36,6 +36,63 @@ type SavedAddress = {
   state: string;
   country: string;
 };
+
+type CheckoutProductRow = {
+  id: number;
+  name: string;
+  price: number | string;
+  original_price: number | string | null;
+  offer_type: string | null;
+  discount_percent: number | null;
+  buy_qty: number | null;
+  get_qty: number | null;
+  discount_start: string | null;
+  discount_end: string | null;
+  product_images: Array<{ image_url: string }> | null;
+};
+
+type CheckoutItemRow = {
+  id: number;
+  quantity: number;
+  product_id: number;
+  products: CheckoutProductRow | CheckoutProductRow[] | null;
+};
+
+type CheckoutItem = {
+  id: number;
+  productId: number;
+  name: string;
+  qty: number;
+  price: number;
+  imageUrl: string | null;
+  offerType: string | null;
+  discountValue: number | null;
+  buyQty: number | null;
+  getQty: number | null;
+  discountStart: string | null;
+  discountEnd: string | null;
+};
+
+function formatINR(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function toNumber(value: number | string | null | undefined) {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "number") return value;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeCheckoutProduct(value: CheckoutProductRow | CheckoutProductRow[] | null) {
+  if (!value) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
 
 const MOCK_ADDRESSES: SavedAddress[] = [
   {
@@ -88,6 +145,8 @@ export default function CheckoutPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [cartItems, setCartItems] = useState<CheckoutItem[]>([]);
+  const [loadingCart, setLoadingCart] = useState(Boolean(supabase));
 
   const [form, setForm] = useState<FormState>({
     firstName: "",
@@ -104,10 +163,70 @@ export default function CheckoutPage() {
     isBusiness: false,
   });
 
+  const loadCart = useCallback(
+    async (userId: string) => {
+      if (!supabase) return;
+
+      const { data: activeCart, error: cartError } = await supabase
+        .from("carts")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "ACTIVE")
+        .maybeSingle();
+
+      if (cartError || !activeCart) {
+        setCartItems([]);
+        setLoadingCart(false);
+        return;
+      }
+
+      const { data: rows, error: itemsError } = await supabase
+        .from("cart_items")
+        .select(
+          "id,quantity,product_id,products(id,name,price,original_price,offer_type,discount_percent,buy_qty,get_qty,discount_start,discount_end,product_images(image_url))"
+        )
+        .eq("cart_id", activeCart.id)
+        .order("created_at", { ascending: true });
+
+      if (itemsError) {
+        setCartItems([]);
+        setLoadingCart(false);
+        setMessage(itemsError.message);
+        return;
+      }
+
+      const mapped = ((rows as CheckoutItemRow[] | null) ?? [])
+        .map((row): CheckoutItem | null => {
+          const product = normalizeCheckoutProduct(row.products);
+          if (!product) return null;
+
+          return {
+            id: row.id,
+            productId: row.product_id,
+            name: product.name,
+            qty: row.quantity,
+            price: toNumber(product.price),
+            imageUrl: product.product_images?.[0]?.image_url || null,
+            offerType: product.offer_type,
+            discountValue: product.discount_percent,
+            buyQty: product.buy_qty,
+            getQty: product.get_qty,
+            discountStart: product.discount_start,
+            discountEnd: product.discount_end,
+          };
+        })
+        .filter((item): item is CheckoutItem => Boolean(item));
+
+      setCartItems(mapped);
+      setLoadingCart(false);
+    },
+    [supabase]
+  );
+
   useEffect(() => {
     if (!supabase) return;
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
       setLoadingAuth(false);
 
@@ -121,14 +240,27 @@ export default function CheckoutPage() {
           email: email || prev.email,
         }));
       }
+
+      if (data.session) {
+        await loadCart(data.session.user.id);
+      } else {
+        setLoadingCart(false);
+      }
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       setSession(nextSession);
+      if (nextSession) {
+        setLoadingCart(true);
+        await loadCart(nextSession.user.id);
+      } else {
+        setCartItems([]);
+        setLoadingCart(false);
+      }
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [supabase]);
+  }, [supabase, loadCart]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -138,9 +270,28 @@ export default function CheckoutPage() {
     }
   }, [supabase, loadingAuth, session, router]);
 
-  const subtotal = cartSubtotal(MOCK_CART);
+  const pricedItems = useMemo(
+    () =>
+      cartItems.map((item) => ({
+        ...item,
+        pricing: calculateOfferPricing({
+          unitPrice: item.price,
+          quantity: item.qty,
+          offerType: item.offerType,
+          discountValue: item.discountValue,
+          buyQty: item.buyQty,
+          getQty: item.getQty,
+          discountStart: item.discountStart,
+          discountEnd: item.discountEnd,
+        }),
+      })),
+    [cartItems]
+  );
+
+  const subtotal = pricedItems.reduce((sum, item) => sum + item.pricing.baseTotal, 0);
+  const discount = pricedItems.reduce((sum, item) => sum + item.pricing.discountTotal, 0);
   const shipping = 0;
-  const total = subtotal + shipping;
+  const total = subtotal - discount + shipping;
 
   const validate = () => {
     if (selectedAddressId === "new") {
@@ -160,6 +311,11 @@ export default function CheckoutPage() {
   };
 
   const onSubmit = async () => {
+    if (pricedItems.length === 0) {
+      setMessage("Your bag is empty.");
+      return;
+    }
+
     const error = validate();
     if (error) {
       setMessage(error);
@@ -192,7 +348,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (loadingAuth) {
+  if (loadingAuth || loadingCart) {
     return (
       <main className="min-h-screen bg-white">
         <div className="mx-auto max-w-5xl px-6 py-12">
@@ -236,7 +392,10 @@ export default function CheckoutPage() {
             </div>
 
             <div className="mt-5 space-y-4">
-              {MOCK_CART.map((item) => (
+              {pricedItems.length === 0 ? (
+                <p className="text-sm text-[#6e6e73]">Your bag is empty.</p>
+              ) : null}
+              {pricedItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -248,7 +407,12 @@ export default function CheckoutPage() {
                     <p className="truncate text-sm font-semibold">{item.name}</p>
                     <p className="text-xs text-[#6e6e73]">Qty {item.qty}</p>
                   </div>
-                  <p className="text-sm font-semibold">{formatINR(item.price * item.qty)}</p>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold">{formatINR(item.pricing.finalTotal)}</p>
+                    {item.pricing.offerApplied ? (
+                      <p className="text-xs text-[#6e6e73] line-through">{formatINR(item.pricing.baseTotal)}</p>
+                    ) : null}
+                  </div>
                 </div>
               ))}
             </div>
@@ -261,6 +425,10 @@ export default function CheckoutPage() {
               <div className="mt-2 flex items-center justify-between">
                 <span>Shipping</span>
                 <span>{shipping === 0 ? "FREE" : formatINR(shipping)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-emerald-700">
+                <span>Offer savings</span>
+                <span>-{formatINR(discount)}</span>
               </div>
               <div className="mt-3 flex items-center justify-between text-base font-semibold text-[#1d1d1f]">
                 <span>Total</span>
@@ -452,10 +620,10 @@ export default function CheckoutPage() {
             <button
               type="button"
               onClick={onSubmit}
-              disabled={submitting}
+              disabled={submitting || pricedItems.length === 0}
               className="mt-12 w-full rounded-2xl bg-[#0071e3] px-6 py-4 text-base font-semibold text-white shadow-[0_18px_40px_rgba(0,113,227,0.25)] transition hover:bg-[#0077ed] disabled:opacity-60"
             >
-              {submitting ? "Continuing..." : "Continue to Payment"}
+              {submitting ? "Continuing..." : pricedItems.length === 0 ? "Bag is empty" : "Continue to Payment"}
             </button>
 
             {message ? <p className="mt-4 text-sm text-[#6e6e73]">{message}</p> : null}

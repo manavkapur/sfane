@@ -25,7 +25,7 @@ export default function AdminProductsPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [price, setPrice] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>(["", "", "", "", ""]);
 
   const refreshProducts = async () => {
     if (!supabase) return;
@@ -74,6 +74,8 @@ export default function AdminProductsPage() {
       return;
     }
 
+    const cleanImageUrls = imageUrls.map((value) => value.trim()).filter(Boolean).slice(0, 5);
+
     const { error } = await supabase.functions.invoke("admin-products", {
       method: "POST",
       body: {
@@ -82,7 +84,7 @@ export default function AdminProductsPage() {
           name,
           slug,
           price: parsedPrice,
-          images: imageUrl ? [imageUrl] : [],
+          images: cleanImageUrls,
         },
       },
     });
@@ -95,7 +97,7 @@ export default function AdminProductsPage() {
     setName("");
     setSlug("");
     setPrice("");
-    setImageUrl("");
+    setImageUrls(["", "", "", "", ""]);
     setMessage("Product created.");
     await refreshProducts();
   };
@@ -165,12 +167,17 @@ export default function AdminProductsPage() {
             placeholder="Price"
             className="rounded-full border border-[#d8c2b1] px-4 py-2 text-sm"
           />
-          <input
-            value={imageUrl}
-            onChange={(event) => setImageUrl(event.target.value)}
-            placeholder="Image URL"
-            className="rounded-full border border-[#d8c2b1] px-4 py-2 text-sm"
-          />
+          {imageUrls.map((imageUrl, index) => (
+            <input
+              key={`image-url-${index}`}
+              value={imageUrl}
+              onChange={(event) =>
+                setImageUrls((prev) => prev.map((item, itemIndex) => (itemIndex === index ? event.target.value : item)))
+              }
+              placeholder={`Image URL ${index + 1}${index === 0 ? " (primary)" : ""}`}
+              className="rounded-full border border-[#d8c2b1] px-4 py-2 text-sm"
+            />
+          ))}
         </div>
         <button
           onClick={createProduct}

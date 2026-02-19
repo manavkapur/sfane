@@ -6,9 +6,10 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AddToCartButtonProps = {
   productId: number;
+  compact?: boolean;
 };
 
-export function AddToCartButton({ productId }: AddToCartButtonProps) {
+export function AddToCartButton({ productId, compact = false }: AddToCartButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -25,7 +26,7 @@ export function AddToCartButton({ productId }: AddToCartButtonProps) {
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
       setIsLoading(false);
-      setMessage("Sign in from Cart page first.");
+      setMessage("Please sign in to add items.");
       return;
     }
 
@@ -49,6 +50,21 @@ export function AddToCartButton({ productId }: AddToCartButtonProps) {
     setMessage("Added to cart.");
     setIsLoading(false);
   };
+
+  if (compact) {
+    return (
+      <div className="w-full">
+        <button
+          onClick={onAddToCart}
+          disabled={isLoading}
+          className="w-full rounded-full bg-[#1f140d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2b1b12] disabled:opacity-60"
+        >
+          {isLoading ? "Adding..." : "Add to cart"}
+        </button>
+        {message ? <p className="mt-2 text-xs text-[#6a4b36]">{message}</p> : null}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-3">

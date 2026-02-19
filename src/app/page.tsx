@@ -624,6 +624,8 @@ export default function Home() {
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const heroRef = useRef(null);
+  const showPinnedProductSection =
+    process.env.NEXT_PUBLIC_ENABLE_PINNED_PRODUCT_SECTION === "true";
 
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -1053,8 +1055,8 @@ export default function Home() {
           </motion.div>
         </section>
 
-        {/* PINNED PRODUCT SECTION */}
-        <PinnedProductSection />
+        {/* PINNED PRODUCT SECTION (flagged off by default) */}
+        {showPinnedProductSection ? <PinnedProductSection /> : null}
 
         <VideoSection />
 

@@ -4,14 +4,24 @@ import { notFound } from "next/navigation";
 import { ProductCard, type ProductCardData } from "@/components/product-card";
 import { getSupabaseClient } from "@/lib/supabase";
 
-function buildBadge(product: { offer_type: string | null; discount_percent: number | null }) {
-  if (product.offer_type && product.offer_type !== "NONE") {
-    if (product.discount_percent) {
-      return `${product.discount_percent}% off`;
-    }
-    return "Offer";
+function buildBadge(product: { offer_type: string | null; discount_percent: number | null; buy_qty?: number | null; get_qty?: number | null }) {
+  if (!product.offer_type || product.offer_type === "NONE") {
+    return null;
   }
-  return null;
+
+  if (product.offer_type === "PERCENT" && product.discount_percent) {
+    return `${product.discount_percent}% off`;
+  }
+
+  if (product.offer_type === "FIXED" && product.discount_percent) {
+    return `₹${product.discount_percent} off`;
+  }
+
+  if (product.offer_type === "BUY_X_GET_Y" && product.buy_qty && product.get_qty) {
+    return `Buy ${product.buy_qty} Get ${product.get_qty}`;
+  }
+
+  return "Offer";
 }
 
 export default async function CategoryPage({
@@ -35,7 +45,7 @@ export default async function CategoryPage({
   const { data, error } = await supabase
     .from("product_categories")
     .select(
-      "products(id,name,slug,price,original_price,offer_type,discount_percent,product_images(image_url))"
+      "products(id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,product_images(image_url))"
     )
     .eq("category_id", category.id);
 
@@ -56,6 +66,8 @@ export default async function CategoryPage({
       badge: buildBadge({
         offer_type: product.offer_type,
         discount_percent: product.discount_percent,
+        buy_qty: product.buy_qty,
+        get_qty: product.get_qty,
       }),
     }));
 
