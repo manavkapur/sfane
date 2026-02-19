@@ -28,7 +28,7 @@ function buildBadge(product: { offer_type: string | null; discount_percent: numb
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ sort?: string; filter?: string; q?: string }>;
+  searchParams?: Promise<{ sort?: string; filter?: string; q?: string; category?: string }>;
 }) {
   const params = (await searchParams) || {};
   const supabase = getSupabaseClient();
@@ -40,6 +40,36 @@ export default async function ProductsPage({
     backendMessage =
       "Missing Supabase env vars. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.";
   } else {
+    let categoryProductIds: number[] | null = null;
+
+    if (params.category) {
+      const { data: categoryRow, error: categoryError } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("slug", params.category)
+        .eq("active", true)
+        .maybeSingle();
+
+      if (categoryError) {
+        throw new Error(categoryError.message);
+      }
+
+      if (!categoryRow) {
+        categoryProductIds = [];
+      } else {
+        const { data: mappedRows, error: mappedError } = await supabase
+          .from("product_categories")
+          .select("product_id")
+          .eq("category_id", categoryRow.id);
+
+        if (mappedError) {
+          throw new Error(mappedError.message);
+        }
+
+        categoryProductIds = (mappedRows || []).map((row) => row.product_id);
+      }
+    }
+
     let query = supabase
       .from("products")
       .select(
@@ -47,43 +77,57 @@ export default async function ProductsPage({
       )
       .eq("active", true);
 
-    if (params.filter === "offers") {
+    if (params.category) {
+      if (!categoryProductIds || categoryProductIds.length === 0) {
+        products = [];
+      } else {
+        query = query.in("id", categoryProductIds);
+      }
+    }
+
+    if (products.length === 0 && params.category && (!categoryProductIds || categoryProductIds.length === 0)) {
+      // Skip query when category has no mapped products.
+    } else if (params.filter === "offers") {
       query = query.neq("offer_type", "NONE");
     }
 
-    if (params.q) {
-      query = query.ilike("name", `%${params.q}%`);
+    if (products.length !== 0 || !params.category || (categoryProductIds && categoryProductIds.length > 0)) {
+      if (params.q) {
+        query = query.ilike("name", `%${params.q}%`);
+      }
+
+      if (params.sort === "price-asc") {
+        query = query.order("price", { ascending: true });
+      } else if (params.sort === "price-desc") {
+        query = query.order("price", { ascending: false });
+      } else {
+        query = query.order("created_at", { ascending: false });
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      products = (data || []).map((product) => ({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: Number(product.price),
+        original_price: product.original_price ? Number(product.original_price) : null,
+        image_url: product.product_images?.[0]?.image_url || null,
+        badge: buildBadge({
+          offer_type: product.offer_type,
+          discount_percent: product.discount_percent,
+          buy_qty: product.buy_qty,
+          get_qty: product.get_qty,
+        }),
+      }));
     }
-
-    if (params.sort === "price-asc") {
-      query = query.order("price", { ascending: true });
-    } else if (params.sort === "price-desc") {
-      query = query.order("price", { ascending: false });
-    } else {
-      query = query.order("created_at", { ascending: false });
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    products = (data || []).map((product) => ({
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      price: Number(product.price),
-      original_price: product.original_price ? Number(product.original_price) : null,
-      image_url: product.product_images?.[0]?.image_url || null,
-      badge: buildBadge({
-        offer_type: product.offer_type,
-        discount_percent: product.discount_percent,
-        buy_qty: product.buy_qty,
-        get_qty: product.get_qty,
-      }),
-    }));
   }
+
+  const shouldShowSampleCard = !params.category;
 
   return (
     <div className="min-h-screen bg-[#f6f3f1] px-6 pb-20 pt-16">
@@ -103,43 +147,45 @@ export default async function ProductsPage({
         </div>
 
         <div className="mt-12 grid gap-6 md:grid-cols-3">
-          <div className="group relative flex flex-col overflow-hidden rounded-[24px] border border-[#efe6de] bg-white/90 shadow-[0_20px_50px_rgba(20,12,10,0.12)]">
-            <Link href={`/products-sample/${SAMPLE_PRODUCT.slug}`} className="block">
-              <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#f6f3f1]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={SAMPLE_PRODUCT.cardImage}
-                  alt={SAMPLE_PRODUCT.name}
-                  className="h-full w-full object-contain p-6 transition duration-500 group-hover:scale-[1.03]"
-                />
-              </div>
-            </Link>
-
-            <div className="flex flex-1 flex-col gap-2 px-6 pb-6 pt-5">
-              <Link href={`/products-sample/${SAMPLE_PRODUCT.slug}`}>
-                <h3 className="text-lg font-semibold text-[#1f140d]">{SAMPLE_PRODUCT.name}</h3>
+          {shouldShowSampleCard ? (
+            <div className="group relative flex flex-col overflow-hidden rounded-[24px] border border-[#efe6de] bg-white/90 shadow-[0_20px_50px_rgba(20,12,10,0.12)]">
+              <Link href={`/products-sample/${SAMPLE_PRODUCT.slug}`} className="block">
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#f6f3f1]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={SAMPLE_PRODUCT.cardImage}
+                    alt={SAMPLE_PRODUCT.name}
+                    className="h-full w-full object-contain p-6 transition duration-500 group-hover:scale-[1.03]"
+                  />
+                </div>
               </Link>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-semibold text-[#1f140d]">{formatINR(SAMPLE_PRODUCT.price)}</span>
-                <span className="text-sm text-[#a18675] line-through">{formatINR(SAMPLE_PRODUCT.originalPrice)}</span>
-              </div>
 
-              <div className="mt-3 flex gap-2">
-                <Link
-                  href="/cart"
-                  className="rounded-full bg-[#1f140d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2b1b12]"
-                >
-                  Add to cart
+              <div className="flex flex-1 flex-col gap-2 px-6 pb-6 pt-5">
+                <Link href={`/products-sample/${SAMPLE_PRODUCT.slug}`}>
+                  <h3 className="text-lg font-semibold text-[#1f140d]">{SAMPLE_PRODUCT.name}</h3>
                 </Link>
-                <Link
-                  href={`/products-sample/${SAMPLE_PRODUCT.slug}`}
-                  className="rounded-full border border-[#d9c8bc] px-4 py-2 text-sm font-semibold text-[#6a4b36] transition hover:bg-[#f8f2ed]"
-                >
-                  View details
-                </Link>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-semibold text-[#1f140d]">{formatINR(SAMPLE_PRODUCT.price)}</span>
+                  <span className="text-sm text-[#a18675] line-through">{formatINR(SAMPLE_PRODUCT.originalPrice)}</span>
+                </div>
+
+                <div className="mt-3 flex gap-2">
+                  <Link
+                    href="/cart"
+                    className="rounded-full bg-[#1f140d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2b1b12]"
+                  >
+                    Add to cart
+                  </Link>
+                  <Link
+                    href={`/products-sample/${SAMPLE_PRODUCT.slug}`}
+                    className="rounded-full border border-[#d9c8bc] px-4 py-2 text-sm font-semibold text-[#6a4b36] transition hover:bg-[#f8f2ed]"
+                  >
+                    View details
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          ) : null}
 
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />

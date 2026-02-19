@@ -14,9 +14,9 @@ const navItems = [
   { label: "Bestsellers", href: "/products" },
   { label: "New Arrivals", href: "/products?sort=new" },
   { label: "Offers", href: "/products?filter=offers" },
-  { label: "Duffle", href: "/categories/duffle" },
-  { label: "Sling", href: "/categories/sling" },
-  { label: "Tiffin", href: "/categories/tiffin" },
+  { label: "Duffle", href: "/products?category=duffle" },
+  { label: "Toiletry Kit", href: "/products?category=toiletry-kit" },
+  { label: "Tiffin", href: "/products?category=tiffin" },
 ];
 
 const compactNavItems = [

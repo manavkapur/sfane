@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { manrope, playfairDisplay } from "@/lib/fonts";
@@ -86,11 +87,28 @@ function VideoSection() {
 }
 
 function BestSellersSection() {
-  const [active, setActive] = useState<{ name: string; price: string; image: string } | null>(null);
-  const items = [
-    { name: "Signature Duffle", price: "₹1,299", image: "/DuffleBag.jpg" },
-    { name: "City Sling", price: "₹899", image: "/SlingBag.jpg" },
-    { name: "Everyday Tiffin", price: "₹749", image: "/Tiffin.jpg" },
+  const categories = [
+    {
+      name: "Duffle",
+      slug: "duffle",
+      image: "/DuffleBag.jpg",
+      blurb: "Structured carry for gym, travel, and quick weekend moves.",
+      meta: "Classic hold-all",
+    },
+    {
+      name: "Toiletry Kit",
+      slug: "toiletry-kit",
+      image: "/Toiletrykit.jpeg",
+      blurb: "Compact grooming carry with clean compartments for daily travel.",
+      meta: "Travel organizer",
+    },
+    {
+      name: "Tiffin",
+      slug: "tiffin",
+      image: "/Tiffin.jpg",
+      blurb: "Clean lunch carry with practical insulation and structure.",
+      meta: "Daily meal companion",
+    },
   ];
 
   return (
@@ -99,95 +117,96 @@ function BestSellersSection() {
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
-              Best Sellers
+              Categories
             </p>
             <h2 className="mt-4 text-3xl font-semibold text-[#161312] md:text-4xl">
-              The pieces everyone comes back for.
+              Choose your everyday carry.
             </h2>
           </div>
-          <button className="rounded-full border border-[#e7d7cc] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#6a4b36]">
+          <Link
+            href="/products"
+            className="rounded-full border border-[#e7d7cc] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#6a4b36] transition hover:border-[#c8b4a6] hover:bg-white/70"
+          >
             View All
-          </button>
+          </Link>
         </div>
 
         <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {items.map((item) => (
-            <div
-              key={item.name}
-              className="group relative rounded-[28px] border border-[#efe6de] bg-white/80 p-6 shadow-[0_20px_50px_rgba(20,12,10,0.12)] transition hover:-translate-y-1 hover:shadow-[0_30px_70px_rgba(20,12,10,0.16)]"
+          {categories.map((category, index) => (
+            <motion.div
+              key={category.slug}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.45, delay: index * 0.08 }}
+              whileHover={{ y: -8 }}
+              whileTap={{ scale: 0.985 }}
+              className="group"
             >
-              <div className="relative h-[220px] overflow-hidden rounded-[20px] border border-[#efe6de] bg-white/90">
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  width={600}
-                  height={600}
-                  className="h-full w-full object-contain pointer-events-none"
-                />
-                <div
-                  className="absolute inset-[30%] z-20 pointer-events-auto"
-                  onMouseEnter={() => setActive(item)}
-                />
-              </div>
-              <div className="mt-6 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-[#1f140d]">
-                    {item.name}
-                  </h3>
-                  <p className="mt-1 text-sm text-[#6a4b36]">{item.price}</p>
+              <Link
+                href={`/products?category=${category.slug}`}
+                className="relative block overflow-hidden rounded-[30px] border border-[#f1dfd0]/85 bg-[linear-gradient(160deg,rgba(250,245,240,0.46),rgba(235,220,206,0.22))] shadow-[0_26px_70px_rgba(20,12,10,0.2)] backdrop-blur-md transition-all duration-300 hover:border-[#f4e7da] hover:shadow-[0_38px_95px_rgba(20,12,10,0.28)]"
+              >
+                <div className="relative h-[340px] overflow-hidden rounded-[22px] bg-[#f2e6dc]/26">
+                  <Image
+                    src={category.image}
+                    alt={category.name}
+                    width={900}
+                    height={700}
+                    className="h-full w-full object-contain p-4 transition duration-700 group-hover:scale-[0.97]"
+                  />
+
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/28 to-transparent" />
+
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-b from-[#25170f]/44 via-[#2b1b12]/34 to-[#2d1f15]/56"
+                    animate={{ opacity: [0.9, 0.84, 0.9] }}
+                    transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+                  />
+
+                  <div className="absolute left-4 top-4 rounded-full border border-white/45 bg-[#2d1f15]/32 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.24em] text-white/90 backdrop-blur-sm">
+                    {category.meta}
+                  </div>
+
+                  <div className="absolute bottom-5 left-5 right-5 text-white">
+                    <h3 className="text-3xl font-semibold leading-none drop-shadow-[0_6px_16px_rgba(0,0,0,0.35)]">
+                      {category.name}
+                    </h3>
+                    <p className="mt-2 max-w-[90%] text-sm text-white/82">
+                      {category.blurb}
+                    </p>
+                  </div>
+
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.div
+                      className="inline-flex items-center gap-3 rounded-full border border-[#fff7f0]/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.28),rgba(255,255,255,0.12))] px-5 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_14px_36px_rgba(0,0,0,0.28)] backdrop-blur-md"
+                      whileHover={{ scale: 1.04 }}
+                      transition={{ type: "spring", stiffness: 360, damping: 20 }}
+                    >
+                      <span>Explore category</span>
+                      <motion.span
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#fff7ef] text-[#1f140d] shadow-[0_6px_16px_rgba(0,0,0,0.2)]"
+                        animate={{ x: [0, 2, 0] }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        →
+                      </motion.span>
+                    </motion.div>
+                  </div>
+
+                  <motion.div
+                    className="pointer-events-none absolute inset-0 rounded-[22px] border border-white/24"
+                    initial={{ opacity: 0.4 }}
+                    whileHover={{ opacity: 0.9 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                  </motion.div>
                 </div>
-                <button className="rounded-full bg-[#1f140d] px-4 py-2 text-xs font-semibold text-white">
-                  Add
-                </button>
-              </div>
-            </div>
+              </Link>
+            </motion.div>
           ))}
         </div>
       </div>
-
-      {active && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
-          onMouseEnter={() => setActive(active)}
-          onMouseLeave={() => setActive(null)}
-          onClick={() => setActive(null)}
-        >
-          <div className="w-full max-w-4xl">
-            <div
-              className="overflow-hidden rounded-[28px] bg-white/95 p-6 shadow-[0_40px_90px_rgba(0,0,0,0.5)]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="grid gap-8 md:grid-cols-[1.1fr_0.9fr] md:items-center">
-                <div className="relative h-[340px] overflow-hidden rounded-[24px] border border-[#efe6de] bg-white">
-                  <Image
-                    src={active.image}
-                    alt={active.name}
-                    width={1200}
-                    height={900}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
-                    Best Seller
-                  </p>
-                  <h3 className="mt-3 text-3xl font-semibold text-[#1f140d]">
-                    {active.name}
-                  </h3>
-                  <p className="mt-2 text-base text-[#6a4b36]">{active.price}</p>
-                  <p className="mt-4 text-sm text-[#5a4637]">
-                    Crafted for everyday carry with premium materials and a
-                    clean, durable finish.
-                  </p>
-                  <button className="mt-6 rounded-full bg-[#1f140d] px-6 py-3 text-sm font-semibold text-white">
-                    Add to Cart
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
@@ -204,37 +223,26 @@ function MaterialsSection() {
             Looks durable. <span className="text-[#6a4b36]">Lives ready.</span>
           </h2>
           <p className="mx-auto mt-4 max-w-3xl text-base text-[#5a4637]">
-            Premium durable material. Lightweight and built with incredibly
-            durable materials, this is your go-to bag for everyday performance.
-            Material: Polyester.
+            Built with premium polyester and clean construction, each bag stays
+            light, durable, and ready for everyday performance.
           </p>
         </div>
 
-        <div className="relative mx-auto mt-16 flex max-w-5xl items-center justify-center">
-          <div className="absolute -inset-12 rounded-full bg-[#f7f1ec] blur-3xl" />
-          <div className="relative">
+        <div className="relative left-1/2 mt-16 w-screen -translate-x-1/2">
+          <div className="absolute inset-x-0 -top-10 h-24 bg-[#f7f1ec] blur-3xl" />
+          <div className="relative w-full">
             <Image
               src="/Allbags.png"
               alt="Sfane bag lineup"
-              width={720}
-              height={720}
-              className="h-auto w-full object-contain drop-shadow-[0_30px_70px_rgba(20,12,10,0.2)]"
+              width={2200}
+              height={1000}
+              className="h-auto w-full object-cover drop-shadow-[0_30px_70px_rgba(20,12,10,0.2)]"
             />
-            <div className="absolute left-[-56px] top-1/2 -translate-y-1/2 text-sm font-semibold text-[#7b5a45] hidden md:block">
-              Durable build
-            </div>
-            <div className="absolute right-[-72px] top-1/2 -translate-y-1/2 text-sm font-semibold text-[#7b5a45] hidden md:block">
-              Lightweight
-            </div>
-            <div className="absolute left-1/2 top-[102%] -translate-x-1/2 text-sm font-semibold text-[#7b5a45] hidden md:block">
-              Polyester
-            </div>
           </div>
         </div>
 
         <div className="mx-auto mt-12 max-w-4xl text-center text-sm text-[#6a4b36]">
-          Travel duffle bag is made of high quality, durable material. Our
-          tried-and-true bags just keep getting better.
+          Designed for daily wear with a finish that stays sharp over time.
         </div>
       </div>
     </section>
@@ -260,7 +268,7 @@ function FooterSection() {
           <div>
             <p className="text-lg font-semibold text-[#1f140d]">Sfane</p>
             <p className="mt-3 max-w-sm text-sm text-[#6a4b36]">
-              Premium duffle, sling, and tiffin carry designed for everyday
+              Premium duffle, toiletry, and tiffin carry designed for everyday
               performance. Durable materials, refined details, and a clean
               finish.
             </p>
@@ -281,7 +289,7 @@ function FooterSection() {
             <ul className="mt-4 space-y-3 text-sm text-[#6a4b36]">
               <li>Bestsellers</li>
               <li>Duffle</li>
-              <li>Sling</li>
+              <li>Toiletry</li>
               <li>Tiffin</li>
             </ul>
           </div>
@@ -293,33 +301,51 @@ function FooterSection() {
             <ul className="mt-4 space-y-3 text-sm text-[#6a4b36]">
               <li>About</li>
               <li>Materials & Craft</li>
-              <li>Warranty</li>
               <li>Contact</li>
             </ul>
           </div>
 
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-[#7b5a45]">
-              Stay Close
+              Custom & Bulk
             </p>
             <p className="mt-4 text-sm text-[#6a4b36]">
-              Join the Sfane list for new drops and early access.
+              For customise or bulk order, in-house manufacturing we can create
+              for you.
             </p>
-            <div className="mt-4 flex gap-2">
-              <input
-                type="email"
-                placeholder="Email address"
-                className="w-full rounded-full border border-[#e7d7cc] bg-white/80 px-4 py-2 text-sm text-[#1f140d] outline-none placeholder:text-[#9a7f6a]"
-              />
-              <button className="rounded-full bg-[#1f140d] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white">
-                Join
-              </button>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <a
+                href="tel:+919646005533"
+                className="group inline-flex items-center gap-2 rounded-full border border-[#e7d7cc] bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(246,236,228,0.88))] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#1f140d] shadow-[0_10px_28px_rgba(20,12,10,0.12)] transition hover:-translate-y-0.5 hover:border-[#d9c2b0] hover:shadow-[0_16px_34px_rgba(20,12,10,0.18)]"
+              >
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#1f140d] text-white">
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.7 2.6a2 2 0 0 1-.4 2.1L8 9.7a16 16 0 0 0 6.3 6.3l1.3-1.3a2 2 0 0 1 2.1-.4c.8.4 1.7.6 2.6.7A2 2 0 0 1 22 16.9z" />
+                  </svg>
+                </span>
+                +91 9646005533
+              </a>
+
+              <a
+                href="https://wa.me/919646005533"
+                target="_blank"
+                rel="noreferrer"
+                className="group inline-flex items-center gap-2 rounded-full border border-[#cfe7d2] bg-[linear-gradient(135deg,rgba(255,255,255,0.9),rgba(228,248,231,0.88))] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#1f140d] shadow-[0_10px_28px_rgba(20,12,10,0.12)] transition hover:-translate-y-0.5 hover:border-[#b7d8bc] hover:shadow-[0_16px_34px_rgba(20,12,10,0.18)]"
+              >
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#25D366] text-white">
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden="true">
+                    <path d="M17.5 14.3c-.3-.1-1.8-.9-2.1-1-.3-.1-.5-.1-.7.1l-.6.7c-.2.2-.4.2-.7.1-1.8-.9-3-2.5-3.2-2.9-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6 0-.2 0-.4-.1-.5-.1-.1-.7-1.7-.9-2.3-.2-.6-.4-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.2-.8.8-.8 1.9 0 1.1.8 2.1.9 2.3.1.2 1.6 2.5 3.9 3.5.5.2 1 .4 1.4.5.6.2 1.1.2 1.5.1.5-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.3z" />
+                    <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-2.9-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z" />
+                  </svg>
+                </span>
+                WhatsApp
+              </a>
             </div>
           </div>
         </div>
 
         <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-[#e7d7cc] pt-6 text-xs text-[#7b5a45]">
-          <span>Privacy · Terms · Shipping · Returns</span>
+          <span>Privacy · Terms</span>
           <span>support@sfane.in</span>
         </div>
       </div>

@@ -18,11 +18,13 @@ export function ProductsToolbar({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const offersParams = new URLSearchParams(searchParams.toString());
+  offersParams.set("filter", "offers");
 
   return (
     <div className="flex items-center gap-3">
       <Link
-        href="/products?filter=offers"
+        href={`/products?${offersParams.toString()}`}
         className="rounded-full border border-[#e7d7cc] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#6a4b36]"
       >
         Offers
