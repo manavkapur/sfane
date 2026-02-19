@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-export default function SignupPage() {
+function SignupContent() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -130,5 +130,21 @@ export default function SignupPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-white text-[#111111]">
+          <div className="mx-auto max-w-4xl px-6 pb-24 pt-16">
+            <p className="text-center text-sm text-[#6e6e73]">Loading sign up...</p>
+          </div>
+        </main>
+      }
+    >
+      <SignupContent />
+    </Suspense>
   );
 }

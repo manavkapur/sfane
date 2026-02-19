@@ -5,6 +5,35 @@ import { AddToCartButton } from "@/components/add-to-cart-button";
 import { ProductImageGallery } from "@/components/product-image-gallery";
 import { getSupabaseClient } from "@/lib/supabase";
 
+type ProductImageRow = { image_url: string | null };
+type ProductCategoryRow = {
+  category_id: number | null;
+  categories: { id: number; name: string; slug: string } | null;
+};
+type CategoryLinkRow = { product_id: number | null };
+type SimilarProductRow = {
+  id: number;
+  name: string;
+  slug: string;
+  price: number | string;
+  original_price: number | string | null;
+  product_images: Array<{ image_url: string }> | null;
+};
+type ProductDetailRow = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  price: number | string;
+  original_price: number | string | null;
+  offer_type: "NONE" | "PERCENT" | "FIXED" | "BUY_X_GET_Y" | null;
+  discount_percent: number | null;
+  buy_qty: number | null;
+  get_qty: number | null;
+  product_images: ProductImageRow[] | null;
+  product_categories: ProductCategoryRow[] | null;
+};
+
 function formatPrice(value: number | null | undefined) {
   if (value === null || value === undefined) {
     return "";
@@ -37,7 +66,7 @@ export default async function ProductDetailPage({
     );
   }
 
-  const { data, error } = await supabase
+  const { data: productData, error } = await supabase
     .from("products")
     .select(
       "id,name,slug,description,price,original_price,offer_type,discount_percent,buy_qty,get_qty,product_images(image_url),product_categories(category_id,categories(id,name,slug))"
@@ -46,11 +75,16 @@ export default async function ProductDetailPage({
     .eq("active", true)
     .single();
 
+  const data = (productData as ProductDetailRow | null) ?? null;
+
   if (error || !data) {
     notFound();
   }
 
-  const imageUrls = (data.product_images || []).map((image) => image.image_url).filter(Boolean).slice(0, 5);
+  const imageUrls = (data.product_images || [])
+    .map((image) => image.image_url)
+    .filter((url): url is string => Boolean(url))
+    .slice(0, 5);
   const offerLabel =
     data.offer_type === "PERCENT" && data.discount_percent
       ? `-${data.discount_percent}%`
@@ -61,46 +95,48 @@ export default async function ProductDetailPage({
           : null;
   const categories = (data.product_categories || [])
     .map((item) => item.categories)
-    .filter(Boolean);
+    .filter(
+      (category): category is { id: number; name: string; slug: string } =>
+        Boolean(category && typeof category.slug === "string" && typeof category.name === "string")
+    );
   const categoryIds = (data.product_categories || [])
     .map((item) => item.category_id)
     .filter((value): value is number => typeof value === "number");
 
-  let similarProducts: Array<{
-    id: number;
-    name: string;
-    slug: string;
-    price: number | string;
-    original_price: number | string | null;
-    product_images: Array<{ image_url: string }> | null;
-  }> = [];
+  let similarProducts: SimilarProductRow[] = [];
 
   if (categoryIds.length) {
-    const { data: relatedRows } = await supabase
+    const { data: relatedRowsRaw } = await supabase
       .from("product_categories")
       .select("product_id")
       .in("category_id", categoryIds)
       .neq("product_id", data.id)
       .limit(50);
+    const relatedRows = (relatedRowsRaw as CategoryLinkRow[] | null) ?? [];
 
     const similarIds = Array.from(
-      new Set((relatedRows || []).map((row) => row.product_id).filter((value): value is number => typeof value === "number"))
+      new Set(relatedRows.map((row) => row.product_id).filter((value): value is number => typeof value === "number"))
     );
 
     if (similarIds.length) {
-      const { data: rows } = await supabase
+      const { data: rowsRaw } = await supabase
         .from("products")
         .select("id,name,slug,price,original_price,product_images(image_url)")
         .in("id", similarIds.slice(0, 12))
         .eq("active", true)
         .limit(4);
 
-      similarProducts = (rows || []) as typeof similarProducts;
+      similarProducts = ((rowsRaw as SimilarProductRow[] | null) ?? []).map((row) => ({
+        ...row,
+        product_images: (row.product_images || [])
+          .map((img) => ({ image_url: img.image_url }))
+          .filter((img) => Boolean(img.image_url)),
+      }));
     }
   }
 
   if (similarProducts.length === 0) {
-    const { data: fallbackRows } = await supabase
+    const { data: fallbackRowsRaw } = await supabase
       .from("products")
       .select("id,name,slug,price,original_price,product_images(image_url)")
       .neq("id", data.id)
@@ -108,7 +144,12 @@ export default async function ProductDetailPage({
       .order("created_at", { ascending: false })
       .limit(4);
 
-    similarProducts = (fallbackRows || []) as typeof similarProducts;
+    similarProducts = ((fallbackRowsRaw as SimilarProductRow[] | null) ?? []).map((row) => ({
+      ...row,
+      product_images: (row.product_images || [])
+        .map((img) => ({ image_url: img.image_url }))
+        .filter((img) => Boolean(img.image_url)),
+    }));
   }
 
   return (

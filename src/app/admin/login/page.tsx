@@ -91,7 +91,7 @@ export default function AdminLoginPage() {
 
     if (!access.ok) {
       await supabase.auth.signOut();
-      setMessage(access.message);
+      setMessage(access.message ?? "Admin access denied.");
       setLoading(false);
       return;
     }

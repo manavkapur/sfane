@@ -4,6 +4,28 @@ import { notFound } from "next/navigation";
 import { ProductCard, type ProductCardData } from "@/components/product-card";
 import { getSupabaseClient } from "@/lib/supabase";
 
+type CategoryRow = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
+type ProductJoinRow = {
+  products: {
+    id: number;
+    name: string;
+    slug: string;
+    price: number | string;
+    original_price: number | string | null;
+    offer_type: string | null;
+    discount_percent: number | null;
+    buy_qty: number | null;
+    get_qty: number | null;
+    product_images: Array<{ image_url: string }> | null;
+  } | null;
+};
+type ProductRow = NonNullable<ProductJoinRow["products"]>;
+
 function buildBadge(product: { offer_type: string | null; discount_percent: number | null; buy_qty?: number | null; get_qty?: number | null }) {
   if (!product.offer_type || product.offer_type === "NONE") {
     return null;
@@ -27,16 +49,21 @@ function buildBadge(product: { offer_type: string | null; discount_percent: numb
 export default async function CategoryPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error("Missing Supabase env vars.");
+  }
 
-  const { data: category, error: categoryError } = await supabase
+  const { data: categoryData, error: categoryError } = await supabase
     .from("categories")
     .select("id,name,slug")
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .eq("active", true)
     .single();
+  const category = (categoryData as CategoryRow | null) ?? null;
 
   if (categoryError || !category) {
     notFound();
@@ -53,9 +80,11 @@ export default async function CategoryPage({
     throw new Error(error.message);
   }
 
-  const products: ProductCardData[] = (data || [])
+  const productRows = ((data as ProductJoinRow[] | null) ?? []);
+
+  const products: ProductCardData[] = productRows
     .map((row) => row.products)
-    .filter(Boolean)
+    .filter((product): product is ProductRow => Boolean(product))
     .map((product) => ({
       id: product.id,
       name: product.name,

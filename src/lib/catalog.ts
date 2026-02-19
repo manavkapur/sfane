@@ -64,27 +64,42 @@ export async function getCatalogData(categorySlug?: string): Promise<{
     return { products: [], categories: [] };
   }
 
-  const [productsResult, categoriesResult] = await Promise.all([
-    supabase
-      .from("products")
-      .select(
-        "id,name,slug,description,price,original_price,offer_type,discount_percent,buy_qty,get_qty,active,product_images(image_url),product_categories(categories(id,name,slug))"
-      )
-      .eq("active", true)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("categories")
-      .select("id,name,slug,active")
-      .eq("active", true)
-      .order("name", { ascending: true }),
-  ]);
+  let productsResult:
+    | { data: unknown; error: { message: string } | null }
+    | null = null;
+  let categoriesResult:
+    | { data: unknown; error: { message: string } | null }
+    | null = null;
+
+  try {
+    [productsResult, categoriesResult] = await Promise.all([
+      supabase
+        .from("products")
+        .select(
+          "id,name,slug,description,price,original_price,offer_type,discount_percent,buy_qty,get_qty,active,product_images(image_url),product_categories(categories(id,name,slug))"
+        )
+        .eq("active", true)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("categories")
+        .select("id,name,slug,active")
+        .eq("active", true)
+        .order("name", { ascending: true }),
+    ]);
+  } catch {
+    return { products: [], categories: [] };
+  }
+
+  if (!productsResult || !categoriesResult) {
+    return { products: [], categories: [] };
+  }
 
   if (productsResult.error) {
-    throw new Error(`Products query failed: ${productsResult.error.message}`);
+    return { products: [], categories: [] };
   }
 
   if (categoriesResult.error) {
-    throw new Error(`Categories query failed: ${categoriesResult.error.message}`);
+    return { products: [], categories: [] };
   }
 
   const rawProducts = (productsResult.data ?? []) as ProductRow[];

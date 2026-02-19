@@ -5,6 +5,20 @@ import { AddToCartButton } from "@/components/add-to-cart-button";
 import { ProductImageGallery } from "@/components/product-image-gallery";
 import { getSupabaseClient } from "@/lib/supabase";
 
+type ProductDetailRow = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  price: number | string;
+  original_price: number | string | null;
+  offer_type: string | null;
+  discount_percent: number | null;
+  buy_qty: number | null;
+  get_qty: number | null;
+  product_images: Array<{ image_url: string | null }> | null;
+};
+
 function formatINR(value: number | null | undefined) {
   if (value === null || value === undefined) {
     return "";
@@ -37,18 +51,22 @@ export default async function ProductSampleDetailPage({
     );
   }
 
-  const { data, error } = await supabase
+  const { data: productData, error } = await supabase
     .from("products")
     .select("id,name,slug,description,price,original_price,offer_type,discount_percent,buy_qty,get_qty,product_images(image_url)")
     .eq("slug", slug)
     .eq("active", true)
     .single();
+  const data = (productData as ProductDetailRow | null) ?? null;
 
   if (error || !data) {
     notFound();
   }
 
-  const imageUrls = (data.product_images || []).map((image) => image.image_url).filter(Boolean).slice(0, 5);
+  const imageUrls = (data.product_images || [])
+    .map((image) => image.image_url)
+    .filter((url): url is string => Boolean(url))
+    .slice(0, 5);
   const offerLabel =
     data.offer_type === "PERCENT" && data.discount_percent
       ? `-${data.discount_percent}%`

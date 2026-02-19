@@ -5,6 +5,22 @@ import { ProductsToolbar } from "@/components/products-toolbar";
 import { SAMPLE_PRODUCT, formatINR } from "@/lib/sample-product";
 import { getSupabaseClient } from "@/lib/supabase";
 
+type CategoryRow = { id: number };
+type ProductCategoryMapRow = { product_id: number | null };
+type ProductListRow = {
+  id: number;
+  name: string;
+  slug: string;
+  price: number | string;
+  original_price: number | string | null;
+  offer_type: string | null;
+  discount_percent: number | null;
+  buy_qty: number | null;
+  get_qty: number | null;
+  created_at: string;
+  product_images: Array<{ image_url: string | null }> | null;
+};
+
 function buildBadge(product: { offer_type: string | null; discount_percent: number | null; buy_qty?: number | null; get_qty?: number | null }) {
   if (!product.offer_type || product.offer_type === "NONE") {
     return null;
@@ -43,12 +59,13 @@ export default async function ProductsPage({
     let categoryProductIds: number[] | null = null;
 
     if (params.category) {
-      const { data: categoryRow, error: categoryError } = await supabase
+      const { data: categoryRowRaw, error: categoryError } = await supabase
         .from("categories")
         .select("id")
         .eq("slug", params.category)
         .eq("active", true)
         .maybeSingle();
+      const categoryRow = (categoryRowRaw as CategoryRow | null) ?? null;
 
       if (categoryError) {
         throw new Error(categoryError.message);
@@ -57,7 +74,7 @@ export default async function ProductsPage({
       if (!categoryRow) {
         categoryProductIds = [];
       } else {
-        const { data: mappedRows, error: mappedError } = await supabase
+        const { data: mappedRowsRaw, error: mappedError } = await supabase
           .from("product_categories")
           .select("product_id")
           .eq("category_id", categoryRow.id);
@@ -66,7 +83,10 @@ export default async function ProductsPage({
           throw new Error(mappedError.message);
         }
 
-        categoryProductIds = (mappedRows || []).map((row) => row.product_id);
+        const mappedRows = (mappedRowsRaw as ProductCategoryMapRow[] | null) ?? [];
+        categoryProductIds = mappedRows
+          .map((row) => row.product_id)
+          .filter((value): value is number => typeof value === "number");
       }
     }
 
@@ -104,13 +124,15 @@ export default async function ProductsPage({
         query = query.order("created_at", { ascending: false });
       }
 
-      const { data, error } = await query;
+      const { data: productsRaw, error } = await query;
 
       if (error) {
         throw new Error(error.message);
       }
 
-      products = (data || []).map((product) => ({
+      const data = (productsRaw as ProductListRow[] | null) ?? [];
+
+      products = data.map((product) => ({
         id: product.id,
         name: product.name,
         slug: product.slug,
