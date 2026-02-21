@@ -39,7 +39,7 @@ function VideoSection() {
         >
           <video
             src="/safneVideo.mp4"
-            poster="/sfanelogo.jpg"
+            poster="/sfanelogo.png"
             preload="metadata"
             autoPlay
             loop
@@ -867,7 +867,7 @@ export default function Home() {
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
                   <Image
-                    src="/sfanelogo.jpg"
+                    src="/sfaneCarry.jpg"
                     alt="Sfane logo"
                     width={140}
                     height={46}

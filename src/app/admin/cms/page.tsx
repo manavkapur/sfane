@@ -137,7 +137,7 @@ function mapBackendProductToAdminProduct(product: AdminProductRow): AdminProduct
     category,
     stock: 0,
     active: product.active,
-    imageUrl: product.product_images?.[0]?.image_url || "/sfanelogo.jpg",
+    imageUrl: product.product_images?.[0]?.image_url || "/sfanelogo.png",
     offerType:
       product.offer_type === "PERCENT" || product.offer_type === "FIXED" || product.offer_type === "BUY_X_GET_Y"
         ? product.offer_type

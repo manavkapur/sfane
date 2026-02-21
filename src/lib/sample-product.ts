@@ -12,7 +12,7 @@ export const SAMPLE_PRODUCT = {
   originalPrice: 1199,
   discountPercent: 65,
   available: "In stock",
-  cardImage: "/sfanelogo.jpg",
+  cardImage: "/sfanelogo.png",
   gallery: [
     "/productdetail1.jpg",
     "/productdetail2.jpg",
