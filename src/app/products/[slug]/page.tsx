@@ -1,8 +1,10 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { ProductImageGallery } from "@/components/product-image-gallery";
 import { manrope, playfairDisplay } from "@/lib/fonts";
+import { absoluteUrl } from "@/lib/seo";
 import { getSupabaseClient } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 
@@ -51,6 +53,84 @@ function formatPrice(value: number | null | undefined) {
 
 const headingFont = playfairDisplay;
 const bodyFont = manrope;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    return {
+      title: "Product",
+      description: "Sfane product detail page.",
+      alternates: { canonical: `/products/${slug}` },
+    };
+  }
+
+  const { data } = await supabase
+    .from("products")
+    .select("name,slug,description,price,active,product_images(image_url)")
+    .eq("slug", slug)
+    .eq("active", true)
+    .maybeSingle();
+
+  const product = (data as
+    | {
+        name: string;
+        slug: string;
+        description: string | null;
+        price: number | string;
+        active: boolean | null;
+        product_images: Array<{ image_url: string | null }> | null;
+      }
+    | null) ?? null;
+
+  if (!product) {
+    return {
+      title: "Product Not Found",
+      description: "This product is not available.",
+      robots: { index: false, follow: false },
+      alternates: { canonical: `/products/${slug}` },
+    };
+  }
+
+  const priceText = formatPrice(Number(product.price));
+  const description =
+    product.description?.trim() ||
+    `${product.name} by Sfane. Premium everyday carry designed for gym, office, and travel.`;
+  const primaryImage = product.product_images?.[0]?.image_url
+    ? absoluteUrl(product.product_images[0].image_url)
+    : absoluteUrl("/Allbags.png");
+
+  return {
+    title: `${product.name} ${priceText ? `- ${priceText}` : ""}`.trim(),
+    description,
+    alternates: { canonical: `/products/${product.slug}` },
+    openGraph: {
+      title: `${product.name} | Sfane`,
+      description,
+      url: `/products/${product.slug}`,
+      type: "website",
+      images: [
+        {
+          url: primaryImage,
+          width: 1200,
+          height: 630,
+          alt: product.name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} | Sfane`,
+      description,
+      images: [primaryImage],
+    },
+  };
+}
 
 export default async function ProductDetailPage({
   params,
@@ -121,6 +201,46 @@ export default async function ProductDetailPage({
     categories.length > 0
       ? `More in ${categories[0].name}`
       : "Related products";
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: data.name,
+    description:
+      data.description?.trim() ||
+      `${data.name} by Sfane. Premium everyday carry designed for gym, office, and travel.`,
+    image: (imageUrls.length ? imageUrls : ["/Allbags.png"]).map((image) => absoluteUrl(image)),
+    sku: data.slug,
+    brand: {
+      "@type": "Brand",
+      name: "Sfane",
+    },
+    category: categories[0]?.name ?? "Bags",
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "INR",
+      price: Number(currentPrice),
+      availability: "https://schema.org/InStock",
+      url: absoluteUrl(`/products/${data.slug}`),
+    },
+  };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Products",
+        item: absoluteUrl("/products"),
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: data.name,
+        item: absoluteUrl(`/products/${data.slug}`),
+      },
+    ],
+  };
 
   let similarProducts: SimilarProductRow[] = [];
 
@@ -177,6 +297,14 @@ export default async function ProductDetailPage({
     >
       <div className="pointer-events-none absolute left-[-8rem] top-24 h-72 w-72 rounded-full bg-[#e8d8ca]/55 blur-[110px]" />
       <div className="pointer-events-none absolute right-[-8rem] top-[22rem] h-72 w-72 rounded-full bg-[#d9c3b1]/35 blur-[130px]" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
 
       <div className="mx-auto w-full max-w-[1400px] px-4 pb-20 pt-10 sm:px-6">
         <div className="mb-8 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.26em] text-[#7b5a45] sm:text-xs">
@@ -307,7 +435,7 @@ export default async function ProductDetailPage({
                       <img
                         src={item.product_images?.[0]?.image_url || "/Allbags.png"}
                         alt={item.name}
-                        className={`absolute inset-0 h-full w-full object-contain p-3 transition duration-500 ${
+                        className={`absolute inset-0 h-full w-full object-contain p-3 mix-blend-multiply drop-shadow-[0_12px_22px_rgba(0,0,0,0.18)] saturate-[1.08] contrast-[1.06] transition duration-500 ${
                           item.product_images?.[1]?.image_url
                             ? "opacity-100 group-hover:scale-[1.02] group-hover:opacity-0"
                             : "group-hover:scale-[1.03]"
@@ -318,7 +446,7 @@ export default async function ProductDetailPage({
                         <img
                           src={item.product_images[1].image_url || item.product_images[0]?.image_url || "/Allbags.png"}
                           alt={`${item.name} alternate`}
-                          className="absolute inset-0 h-full w-full object-contain p-3 opacity-0 transition duration-500 group-hover:scale-[1.03] group-hover:opacity-100"
+                          className="absolute inset-0 h-full w-full object-contain p-3 mix-blend-multiply drop-shadow-[0_12px_22px_rgba(0,0,0,0.18)] saturate-[1.08] contrast-[1.06] opacity-0 transition duration-500 group-hover:scale-[1.03] group-hover:opacity-100"
                         />
                       ) : null}
                     </div>

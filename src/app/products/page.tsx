@@ -1,7 +1,9 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { ProductCard, type ProductCardData } from "@/components/product-card";
 import { ProductsToolbar } from "@/components/products-toolbar";
 import { manrope, playfairDisplay } from "@/lib/fonts";
+import { absoluteUrl } from "@/lib/seo";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type CategoryRow = { id: number };
@@ -24,6 +26,30 @@ type ProductListRow = {
 const headingFont = playfairDisplay;
 const bodyFont = manrope;
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Shop Products",
+  description:
+    "Explore Sfane products: premium duffle bags, toiletry kits, and tiffin bags for everyday carry.",
+  alternates: {
+    canonical: "/products",
+  },
+  openGraph: {
+    title: "Shop Products | Sfane",
+    description:
+      "Explore Sfane products: premium duffle bags, toiletry kits, and tiffin bags for everyday carry.",
+    url: "/products",
+    type: "website",
+    images: [
+      {
+        url: absoluteUrl("/Allbags.png"),
+        width: 1200,
+        height: 630,
+        alt: "Sfane product collection",
+      },
+    ],
+  },
+};
 
 function buildBadge(product: { offer_type: string | null; discount_percent: number | null; buy_qty?: number | null; get_qty?: number | null }) {
   if (!product.offer_type || product.offer_type === "NONE") {
