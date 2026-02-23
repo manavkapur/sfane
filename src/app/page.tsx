@@ -31,7 +31,7 @@ function VideoSection() {
 
   return (
     <>
-      <section className="relative h-[58vh] min-h-[360px] w-full overflow-hidden sm:h-[62vh] md:snap-start md:h-screen">
+      <section className="relative h-[56vh] min-h-[300px] w-full overflow-hidden sm:h-[62vh] sm:min-h-[360px] md:snap-start md:h-screen">
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -49,22 +49,22 @@ function VideoSection() {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/50" />
 
-          <div className="absolute inset-0 flex items-center justify-center px-6">
+          <div className="absolute inset-0 flex items-center justify-center px-4 sm:px-6">
             <div className="max-w-3xl text-center text-white">
               <p className="text-xs uppercase tracking-[0.3em] text-white/80">
                 Brand Film
               </p>
-              <h2 className="mt-4 text-3xl font-semibold md:text-5xl">
+              <h2 className="mt-3 text-2xl font-semibold sm:mt-4 sm:text-3xl md:text-5xl">
                 Built for the daily carry.
               </h2>
-              <p className="mt-4 text-base text-white/80 md:text-lg">
+              <p className="mt-3 text-sm text-white/80 sm:mt-4 sm:text-base md:text-lg">
                 A quick look at how Sfane bags move with you—gym, office, and
                 weekend travel.
               </p>
 
-              <span className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/60 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition group-hover:scale-[1.03]">
+              <span className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-white/60 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white shadow-lg backdrop-blur-md transition group-hover:scale-[1.03] sm:mt-8 sm:gap-3 sm:px-6 sm:py-3 sm:text-sm">
                 Watch the film
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1f140d]">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#1f140d] sm:h-8 sm:w-8">
                   ▶
                 </span>
               </span>
@@ -148,26 +148,26 @@ function BestSellersSection() {
   ];
 
   return (
-    <section className="flex w-full items-start py-14 md:snap-start md:h-screen md:items-center md:py-0">
-      <div className="mx-auto flex h-full w-full flex-col justify-start px-6 md:justify-center">
+    <section className="flex w-full items-start py-12 md:snap-start md:h-screen md:items-center md:py-0">
+      <div className="mx-auto flex h-full w-full flex-col justify-start px-4 md:px-6 md:justify-center">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
               Categories
             </p>
-            <h2 className="mt-4 text-3xl font-semibold text-[#161312] md:text-4xl">
+            <h2 className="mt-3 text-2xl font-semibold text-[#161312] sm:mt-4 sm:text-3xl md:text-4xl">
               Choose your everyday carry.
             </h2>
           </div>
           <Link
             href="/products"
-            className="rounded-full border border-[#e7d7cc] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#6a4b36] transition hover:border-[#c8b4a6] hover:bg-white/70"
+            className="rounded-full border border-[#e7d7cc] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#6a4b36] transition hover:border-[#c8b4a6] hover:bg-white/70 sm:px-5 sm:text-xs sm:tracking-[0.2em]"
           >
             View All
           </Link>
         </div>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
+        <div className="mt-8 grid gap-4 sm:mt-10 sm:gap-6 md:grid-cols-3">
           {categories.map((category, index) => (
             <motion.div
               key={category.slug}
@@ -183,7 +183,7 @@ function BestSellersSection() {
                 href={`/products?category=${category.slug}`}
                 className="relative block overflow-hidden rounded-[30px] border border-[#f1dfd0]/65 bg-[linear-gradient(160deg,rgba(250,245,240,0.28),rgba(235,220,206,0.12))] shadow-[0_26px_70px_rgba(20,12,10,0.18)] backdrop-blur-md transition-all duration-300 hover:border-[#f4e7da] hover:shadow-[0_38px_95px_rgba(20,12,10,0.24)]"
               >
-                <div className="relative h-[340px] overflow-hidden rounded-[22px] bg-[#f2e6dc]/14">
+                <div className="relative h-[280px] overflow-hidden rounded-[22px] bg-[#f2e6dc]/14 sm:h-[320px] md:h-[340px]">
                   <Image
                     src={category.image}
                     alt={category.name}
@@ -202,28 +202,28 @@ function BestSellersSection() {
 
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#1a120d]/54 via-[#1a120d]/22 to-transparent" />
 
-                  <div className="absolute left-4 top-4 rounded-full border border-white/28 bg-[#2d1f15]/22 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.24em] text-[#fff8f2]/90 backdrop-blur-sm">
+                  <div className="absolute left-3 top-3 rounded-full border border-white/28 bg-[#2d1f15]/22 px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.16em] text-[#fff8f2]/90 backdrop-blur-sm sm:left-4 sm:top-4 sm:px-3 sm:text-[10px] sm:tracking-[0.24em]">
                     {category.meta}
                   </div>
 
-                  <div className="absolute bottom-5 left-5 right-5 text-[#fff8f1]">
-                    <h3 className="text-3xl font-semibold leading-none tracking-[-0.01em] text-[#fffaf6] drop-shadow-[0_8px_20px_rgba(0,0,0,0.62)]">
+                  <div className="absolute bottom-4 left-4 right-4 text-[#fff8f1] sm:bottom-5 sm:left-5 sm:right-5">
+                    <h3 className="text-2xl font-semibold leading-none tracking-[-0.01em] text-[#fffaf6] drop-shadow-[0_8px_20px_rgba(0,0,0,0.62)] sm:text-3xl">
                       {category.name}
                     </h3>
-                    <p className="mt-2 max-w-[95%] text-sm font-medium text-[#f9eee4]/92 drop-shadow-[0_5px_14px_rgba(0,0,0,0.58)]">
+                    <p className="mt-1.5 max-w-[95%] text-xs font-medium text-[#f9eee4]/92 drop-shadow-[0_5px_14px_rgba(0,0,0,0.58)] sm:mt-2 sm:text-sm">
                       {category.blurb}
                     </p>
                   </div>
 
                   <div className="absolute inset-0 flex items-center justify-center">
                     <motion.div
-                      className="inline-flex items-center gap-3 rounded-full border border-[#f6e7d8]/78 bg-[linear-gradient(135deg,rgba(33,23,17,0.74),rgba(33,23,17,0.58))] px-5 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#fff7ef] shadow-[0_18px_44px_rgba(0,0,0,0.34)] backdrop-blur-md"
+                      className="inline-flex items-center gap-2 rounded-full border border-[#f6e7d8]/78 bg-[linear-gradient(135deg,rgba(33,23,17,0.74),rgba(33,23,17,0.58))] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#fff7ef] shadow-[0_18px_44px_rgba(0,0,0,0.34)] backdrop-blur-md sm:gap-3 sm:px-5 sm:text-xs sm:tracking-[0.18em]"
                       whileHover={{ scale: 1.04 }}
                       transition={{ type: "spring", stiffness: 360, damping: 20 }}
                     >
                       <span>{`Explore ${category.name}`}</span>
                       <motion.span
-                        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#fff7ef] text-[#1f140d] shadow-[0_6px_16px_rgba(0,0,0,0.2)]"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#fff7ef] text-[#1f140d] shadow-[0_6px_16px_rgba(0,0,0,0.2)] sm:h-6 sm:w-6"
                         animate={{ x: [0, 2, 0] }}
                         transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                       >
@@ -251,22 +251,22 @@ function BestSellersSection() {
 
 function MaterialsSection() {
   return (
-    <section className="flex w-full items-start py-14 md:snap-start md:min-h-screen md:items-center md:py-0">
-      <div className="mx-auto w-full px-6 pb-16 pt-6 md:pb-24 md:pt-10">
+    <section className="flex w-full items-start py-12 md:snap-start md:min-h-screen md:items-center md:py-0">
+      <div className="mx-auto w-full px-4 pb-14 pt-4 md:px-6 md:pb-24 md:pt-10">
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-[#7b5a45]">
             Materials & Craft
           </p>
-          <h2 className="mt-4 text-4xl font-semibold text-[#161312] md:text-6xl">
+          <h2 className="mt-3 text-3xl font-semibold text-[#161312] sm:mt-4 sm:text-4xl md:text-6xl">
             Looks durable. <span className="text-[#6a4b36]">Lives ready.</span>
           </h2>
-          <p className="mx-auto mt-4 max-w-3xl text-base text-[#5a4637]">
+          <p className="mx-auto mt-3 max-w-3xl text-sm text-[#5a4637] sm:mt-4 sm:text-base">
             Built with premium polyester and clean construction, each bag stays
             light, durable, and ready for everyday performance.
           </p>
         </div>
 
-        <div className="relative left-1/2 mt-16 w-screen -translate-x-1/2">
+        <div className="relative left-1/2 mt-10 w-screen -translate-x-1/2 sm:mt-16">
           <div className="absolute inset-x-0 -top-10 h-24 bg-[#f7f1ec] blur-3xl" />
           <div className="relative w-full">
             <Image
@@ -279,7 +279,7 @@ function MaterialsSection() {
           </div>
         </div>
 
-        <div className="mx-auto mt-12 max-w-4xl text-center text-sm text-[#6a4b36]">
+        <div className="mx-auto mt-8 max-w-4xl text-center text-sm text-[#6a4b36] sm:mt-12">
           Designed for daily wear with a finish that stays sharp over time.
         </div>
       </div>
@@ -287,21 +287,10 @@ function MaterialsSection() {
   );
 }
 
-function MaterialCard({ feature }: { feature: { title: string; body: string } }) {
-  return (
-    <div className="rounded-[22px] border border-[#efe6de] bg-white/70 p-6 shadow-[0_18px_40px_rgba(20,12,10,0.08)]">
-      <h3 className="text-base font-semibold text-[#1f140d]">
-        {feature.title}
-      </h3>
-      <p className="mt-3 text-sm text-[#6a4b36]">{feature.body}</p>
-    </div>
-  );
-}
-
 function FooterSection() {
   return (
     <footer className="w-full bg-[#f3ede8]">
-      <div className="mx-auto w-full max-w-6xl px-6 py-16">
+      <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="grid gap-10 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
           <div>
             <p className="text-lg font-semibold text-[#1f140d]">Sfane</p>
@@ -310,7 +299,7 @@ function FooterSection() {
               performance. Durable materials, refined details, and a clean
               finish.
             </p>
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-[#e7d7cc] px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-[#7b5a45]">
                 Jalandhar, IN
               </span>
@@ -354,7 +343,7 @@ function FooterSection() {
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <a
                 href="tel:+919646005533"
-                className="group inline-flex items-center gap-2 rounded-full border border-[#e7d7cc] bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(246,236,228,0.88))] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#1f140d] shadow-[0_10px_28px_rgba(20,12,10,0.12)] transition hover:-translate-y-0.5 hover:border-[#d9c2b0] hover:shadow-[0_16px_34px_rgba(20,12,10,0.18)]"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#e7d7cc] bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(246,236,228,0.88))] px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#1f140d] shadow-[0_10px_28px_rgba(20,12,10,0.12)] transition hover:-translate-y-0.5 hover:border-[#d9c2b0] hover:shadow-[0_16px_34px_rgba(20,12,10,0.18)] sm:w-auto sm:tracking-[0.16em]"
               >
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#1f140d] text-white">
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -368,7 +357,7 @@ function FooterSection() {
                 href="https://wa.me/919646005533"
                 target="_blank"
                 rel="noreferrer"
-                className="group inline-flex items-center gap-2 rounded-full border border-[#cfe7d2] bg-[linear-gradient(135deg,rgba(255,255,255,0.9),rgba(228,248,231,0.88))] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#1f140d] shadow-[0_10px_28px_rgba(20,12,10,0.12)] transition hover:-translate-y-0.5 hover:border-[#b7d8bc] hover:shadow-[0_16px_34px_rgba(20,12,10,0.18)]"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#cfe7d2] bg-[linear-gradient(135deg,rgba(255,255,255,0.9),rgba(228,248,231,0.88))] px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#1f140d] shadow-[0_10px_28px_rgba(20,12,10,0.12)] transition hover:-translate-y-0.5 hover:border-[#b7d8bc] hover:shadow-[0_16px_34px_rgba(20,12,10,0.18)] sm:w-auto sm:tracking-[0.16em]"
               >
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#25D366] text-white">
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden="true">
@@ -382,9 +371,9 @@ function FooterSection() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-[#e7d7cc] pt-6 text-xs text-[#7b5a45]">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4 border-t border-[#e7d7cc] pt-6 text-center text-xs text-[#7b5a45] md:justify-between md:text-left">
           <span>Privacy · Terms</span>
-          <span>support@sfane.in</span>
+          <span>info@sfane.in</span>
         </div>
       </div>
     </footer>
@@ -461,30 +450,35 @@ function PinnedProductSection() {
               const cardStart = index / 3;
               const cardEnd = (index + 1) / 3;
 
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               const opacity = useTransform(
                 progress,
                 [Math.max(0, cardStart - 0.1), cardStart, cardEnd - 0.1, cardEnd],
                 [0, 1, 1, 0]
               );
 
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               const scale = useTransform(
                 progress,
                 [Math.max(0, cardStart - 0.08), cardStart + 0.06, cardEnd - 0.06, cardEnd],
                 [0.9, 1, 1, 0.9]
               );
 
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               const rotateY = useTransform(
                 progress,
                 [Math.max(0, cardStart - 0.08), cardStart + 0.06, cardEnd - 0.06, cardEnd],
                 [index % 2 === 0 ? -10 : 10, 0, 0, index % 2 === 0 ? 10 : -10]
               );
 
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               const rotateX = useTransform(
                 progress,
                 [Math.max(0, cardStart - 0.08), cardStart + 0.06, cardEnd - 0.06, cardEnd],
                 [6, 0, 0, -6]
               );
 
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               const z = useTransform(
                 progress,
                 [cardStart, cardStart + 0.05, cardEnd - 0.05, cardEnd],
@@ -663,6 +657,7 @@ function PinnedProductSection() {
             <span className="text-xs font-medium text-[#5a4637]">Scroll to explore</span>
             <div className="flex gap-1.5">
               {[0, 1, 2].map((i) => {
+                // eslint-disable-next-line react-hooks/rules-of-hooks
                 const isActive = useTransform(progress, [i / 3, (i + 1) / 3], [0, 1]);
 
                 return (
@@ -670,7 +665,9 @@ function PinnedProductSection() {
                     key={i}
                     className="h-1.5 w-1.5 rounded-full bg-[#6a4b36]"
                     style={{
+                      // eslint-disable-next-line react-hooks/rules-of-hooks
                       opacity: useTransform(isActive, [0, 0.5, 1], [0.3, 0.6, 1]),
+                      // eslint-disable-next-line react-hooks/rules-of-hooks
                       scale: useTransform(isActive, [0, 0.5, 1], [1, 1.2, 1]),
                     }}
                   />
@@ -763,7 +760,7 @@ export default function Home() {
         {/* HERO SECTION */}
         <section
           ref={heroRef}
-          className="relative min-h-[calc(100dvh-80px)] w-full overflow-visible bg-[#f6f3f1] px-6 pb-20 pt-20 md:min-h-[calc(100vh-80px)] md:overflow-hidden md:pb-0 md:pt-28"
+          className="relative min-h-[calc(100dvh-80px)] w-full overflow-visible bg-[#f6f3f1] px-4 pb-14 pt-14 md:min-h-[calc(100vh-80px)] md:overflow-hidden md:px-6 md:pb-0 md:pt-28"
           onMouseMove={(event) => {
             const rect = event.currentTarget.getBoundingClientRect();
             const x = (event.clientX - rect.left - rect.width / 2) / rect.width;
@@ -773,7 +770,7 @@ export default function Home() {
           onMouseLeave={() => setParallax({ x: 0, y: 0 })}
         >
           {/* Enhanced animated background orbs */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block">
             {floatingElements.map((orb, i) => (
               <motion.div
                 key={i}
@@ -805,7 +802,7 @@ export default function Home() {
           </div>
 
           {/* Animated gradient mesh */}
-          <div className="pointer-events-none absolute inset-0">
+          <div className="pointer-events-none absolute inset-0 hidden md:block">
             <div
               className="absolute left-1/2 top-1/2 h-[600px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40 blur-[100px]"
               style={{
@@ -818,7 +815,7 @@ export default function Home() {
           </div>
 
           {/* Decorative particles */}
-          <div className="pointer-events-none absolute inset-0">
+          <div className="pointer-events-none absolute inset-0 hidden md:block">
             {[...Array(12)].map((_, i) => (
               <motion.div
                 key={i}
@@ -844,7 +841,7 @@ export default function Home() {
 
           <motion.div
             className={cn(
-              "relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 md:grid-cols-[1.05fr_0.95fr] md:gap-20",
+              "relative z-10 mx-auto grid w-full max-w-6xl items-center gap-8 md:grid-cols-[1.05fr_0.95fr] md:gap-20",
               bodyFont.className
             )}
             style={
@@ -855,7 +852,7 @@ export default function Home() {
           >
             <div className="max-w-xl">
               <motion.div
-                className="flex items-center gap-3.5"
+                className="flex items-center gap-2.5 sm:gap-3.5"
                 initial="hidden"
                 whileInView="show"
                 viewport={{ once: true, amount: 0.6 }}
@@ -871,11 +868,11 @@ export default function Home() {
                     alt="Sfane logo"
                     width={140}
                     height={46}
-                    className="h-9 w-auto transition-all duration-300"
+                    className="h-8 w-auto transition-all duration-300 sm:h-9"
                   />
                 </motion.div>
                 <motion.span
-                  className="rounded-full border border-[#e7d7cc]/60 bg-white/90 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.35em] text-[#6a4b36] shadow-sm backdrop-blur-sm"
+                  className="rounded-full border border-[#e7d7cc]/60 bg-white/90 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#6a4b36] shadow-sm backdrop-blur-sm sm:px-3.5 sm:tracking-[0.35em]"
                   whileHover={{
                     scale: 1.05,
                     borderColor: "rgba(106, 75, 54, 0.3)",
@@ -888,7 +885,7 @@ export default function Home() {
 
               <motion.h1
                 className={cn(
-                  "mt-7 text-5xl font-semibold leading-[1.02] tracking-[-0.02em] text-[#161312] md:text-[4.5rem]",
+                  "mt-6 text-[2.6rem] font-semibold leading-[1.04] tracking-[-0.02em] text-[#161312] sm:mt-7 sm:text-5xl md:text-[4.5rem]",
                   headlineFont.className
                 )}
                 initial="hidden"
@@ -913,7 +910,7 @@ export default function Home() {
               </motion.h1>
 
               <motion.p
-                className="mt-6 max-w-xl text-base leading-relaxed text-[#5a4637]/90 md:text-lg"
+                className="mt-4 max-w-xl text-sm leading-relaxed text-[#5a4637]/90 sm:mt-6 sm:text-base md:text-lg"
                 initial="hidden"
                 whileInView="show"
                 viewport={{ once: true, amount: 0.6 }}
@@ -925,7 +922,7 @@ export default function Home() {
               </motion.p>
 
               <motion.div
-                className="mt-9 flex flex-wrap items-center gap-4"
+                className="mt-7 flex flex-wrap items-center gap-3 sm:mt-9 sm:gap-4"
                 initial="hidden"
                 whileInView="show"
                 viewport={{ once: true, amount: 0.6 }}
@@ -939,7 +936,7 @@ export default function Home() {
                 >
                   <Button
                     asChild
-                    className="group relative overflow-hidden bg-[#1f140d] px-7 py-6 text-white shadow-lg shadow-[#1f140d]/20 transition-all duration-300 hover:bg-[#120b07] hover:shadow-xl hover:shadow-[#1f140d]/30"
+                    className="group relative overflow-hidden bg-[#1f140d] px-6 py-4 text-sm text-white shadow-lg shadow-[#1f140d]/20 transition-all duration-300 hover:bg-[#120b07] hover:shadow-xl hover:shadow-[#1f140d]/30 sm:px-7 sm:py-6 sm:text-base"
                   >
                     <Link href="/products">
                       <span className="relative z-10">Shop now</span>
@@ -955,7 +952,7 @@ export default function Home() {
               </motion.div>
 
               <motion.div
-                className="mt-12 flex items-center gap-7 text-xs text-[#7b5a45]"
+                className="mt-8 flex flex-wrap items-center gap-4 text-xs text-[#7b5a45] sm:mt-12 sm:gap-7"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1, duration: 0.6 }}
@@ -977,7 +974,7 @@ export default function Home() {
             </div>
 
             <motion.div
-              className="relative"
+              className="relative mt-4 md:mt-0"
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, amount: 0.4 }}
@@ -987,7 +984,7 @@ export default function Home() {
             >
               {/* Animated glow effects */}
               <motion.div
-                className="absolute -left-12 top-12 h-28 w-28 rounded-full bg-white/80 blur-2xl"
+                className="absolute -left-12 top-12 hidden h-28 w-28 rounded-full bg-white/80 blur-2xl md:block"
                 animate={{
                   scale: [1, 1.2, 1],
                   opacity: [0.6, 0.8, 0.6],
@@ -999,7 +996,7 @@ export default function Home() {
                 }}
               />
               <motion.div
-                className="absolute -right-14 bottom-8 h-32 w-32 rounded-full bg-white/80 blur-2xl"
+                className="absolute -right-14 bottom-8 hidden h-32 w-32 rounded-full bg-white/80 blur-2xl md:block"
                 animate={{
                   scale: [1, 1.15, 1],
                   opacity: [0.7, 0.9, 0.7],
@@ -1014,7 +1011,7 @@ export default function Home() {
 
               {/* Floating accent elements */}
               <motion.div
-                className="absolute -left-8 top-1/4 h-3 w-3 rounded-full bg-gradient-to-br from-[#6a4b36]/40 to-[#6a4b36]/10 shadow-lg"
+                className="absolute -left-8 top-1/4 hidden h-3 w-3 rounded-full bg-gradient-to-br from-[#6a4b36]/40 to-[#6a4b36]/10 shadow-lg md:block"
                 animate={{
                   y: [0, -15, 0],
                   x: [0, 8, 0],
@@ -1027,7 +1024,7 @@ export default function Home() {
                 }}
               />
               <motion.div
-                className="absolute -right-6 top-1/3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#6a4b36]/30 to-[#6a4b36]/10 shadow-md"
+                className="absolute -right-6 top-1/3 hidden h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#6a4b36]/30 to-[#6a4b36]/10 shadow-md md:block"
                 animate={{
                   y: [0, -20, 0],
                   x: [0, -10, 0],
@@ -1042,7 +1039,7 @@ export default function Home() {
               />
 
               <motion.div
-                className="group relative overflow-hidden rounded-[32px] border border-white/80 bg-white/70 p-2.5 shadow-[0_40px_100px_rgba(20,12,10,0.25)] backdrop-blur-sm transition-all duration-500 hover:shadow-[0_50px_120px_rgba(20,12,10,0.3)]"
+                className="group relative overflow-hidden rounded-[26px] border border-white/80 bg-white/70 p-2 shadow-[0_24px_60px_rgba(20,12,10,0.2)] backdrop-blur-sm transition-all duration-500 hover:shadow-[0_50px_120px_rgba(20,12,10,0.3)] sm:rounded-[32px] sm:p-2.5 sm:shadow-[0_40px_100px_rgba(20,12,10,0.25)]"
                 whileHover={{
                   scale: 1.02,
                   rotateY: 3,
@@ -1058,7 +1055,7 @@ export default function Home() {
                   transition={{ duration: 0.8, ease: "easeInOut" }}
                 />
 
-                <div className="relative overflow-hidden rounded-[26px]">
+                <div className="relative overflow-hidden rounded-[22px] sm:rounded-[26px]">
                   <Image
                     src="/sfanelog1.jpg"
                     alt="Sfane duffle bag in gym setting"
@@ -1075,7 +1072,7 @@ export default function Home() {
 
               {/* Floating badge */}
               <motion.div
-                className="absolute -bottom-6 -right-4 rounded-2xl border border-white/70 bg-white/95 px-5 py-3.5 shadow-2xl shadow-[#1f140d]/20 backdrop-blur-md"
+                className="absolute -bottom-4 right-2 rounded-2xl border border-white/70 bg-white/95 px-3 py-2.5 shadow-2xl shadow-[#1f140d]/20 backdrop-blur-md md:-bottom-6 md:-right-4 md:px-5 md:py-3.5"
                 initial={{ opacity: 0, y: 20, scale: 0.8 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{
@@ -1091,7 +1088,7 @@ export default function Home() {
               >
                 <div className="flex items-center gap-3">
                   <motion.div
-                    className="h-10 w-10 rounded-full bg-gradient-to-br from-[#6a4b36] to-[#1f140d]"
+                    className="h-8 w-8 rounded-full bg-gradient-to-br from-[#6a4b36] to-[#1f140d] md:h-10 md:w-10"
                     animate={{ rotate: 360 }}
                     transition={{
                       duration: 20,

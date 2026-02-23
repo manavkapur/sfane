@@ -5,6 +5,29 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
+async function resolveRoleRedirect(accessToken?: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey || !accessToken) return "/account";
+
+  try {
+    const response = await fetch(`${url}/functions/v1/admin-products`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        apikey: anonKey,
+      },
+    });
+
+    if (response.ok) return "/admin/cms";
+    if (response.status === 403) return "/account";
+    return "/account";
+  } catch {
+    return "/account";
+  }
+}
+
 function LoginContent() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const router = useRouter();
@@ -22,12 +45,13 @@ function LoginContent() {
 
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        router.replace(redirectTo);
-      }
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+
+      const destination = await resolveRoleRedirect(data.session.access_token);
+      router.replace(destination);
     });
-  }, [supabase, router, redirectTo]);
+  }, [supabase, router]);
 
   const onLogin = async () => {
     if (!supabase || !email.trim() || !password.trim()) return;
@@ -46,9 +70,13 @@ function LoginContent() {
       return;
     }
 
+    const accessToken =
+      (await supabase.auth.getSession()).data.session?.access_token;
+    const destination = await resolveRoleRedirect(accessToken);
+
     setMessage("Signed in.");
     setLoading(false);
-    router.replace(redirectTo);
+    router.replace(destination);
   };
 
   const helpAction = async () => {

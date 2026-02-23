@@ -1,4 +1,4 @@
-export type OfferType = "NONE" | "PERCENT" | "FIXED" | "BUY_X_GET_Y";
+export type OfferType = "NONE" | "PERCENT" | "FIXED" | "BUY_X_GET_Y" | "QTY_TIER_30_40";
 
 export type OfferInput = {
   unitPrice: number;
@@ -54,7 +54,12 @@ export function calculateOfferPricing(input: OfferInput): OfferPricing {
 
   const rawType = input.offerType || "NONE";
   const offerType: OfferType =
-    rawType === "PERCENT" || rawType === "FIXED" || rawType === "BUY_X_GET_Y" ? rawType : "NONE";
+    rawType === "PERCENT" ||
+    rawType === "FIXED" ||
+    rawType === "BUY_X_GET_Y" ||
+    rawType === "QTY_TIER_30_40"
+      ? rawType
+      : "NONE";
 
   if (offerType === "NONE" || !isOfferWindowActive(input.discountStart, input.discountEnd)) {
     return {
@@ -89,6 +94,19 @@ export function calculateOfferPricing(input: OfferInput): OfferPricing {
       finalTotal: Math.max(0, baseTotal - discountTotal),
       freeQty: 0,
       offerLabel: `₹${fixedPerUnit.toFixed(0)} off`,
+      offerApplied: discountTotal > 0,
+    };
+  }
+
+  if (offerType === "QTY_TIER_30_40") {
+    const percent = quantity > 3 ? 40 : quantity > 2 ? 30 : 0;
+    const discountTotal = (baseTotal * percent) / 100;
+    return {
+      baseTotal,
+      discountTotal,
+      finalTotal: Math.max(0, baseTotal - discountTotal),
+      freeQty: 0,
+      offerLabel: "30% off (qty > 2) · 40% off (qty > 3)",
       offerApplied: discountTotal > 0,
     };
   }

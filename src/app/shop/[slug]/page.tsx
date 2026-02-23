@@ -83,12 +83,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </p>
           </div>
 
-          <Link
-            href="/cart"
-            className="mt-6 inline-flex rounded-full bg-[#1f140d] px-5 py-2 text-sm font-semibold text-white"
-          >
-            Go to Cart
-          </Link>
+          {product.buyLink ? (
+            <a
+              href={product.buyLink}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="mt-6 inline-flex rounded-full bg-[#1f140d] px-5 py-2 text-sm font-semibold text-white"
+            >
+              Buy now
+            </a>
+          ) : null}
         </div>
       </section>
 

@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "@/lib/supabase";
+import { unstable_noStore as noStore } from "next/cache";
 
 export type CatalogCategory = {
   id: number;
@@ -18,6 +19,7 @@ export type CatalogProduct = {
   discountPercent: number | null;
   buyQty: number | null;
   getQty: number | null;
+  buyLink: string | null;
   images: string[];
   categories: Array<Pick<CatalogCategory, "id" | "name" | "slug">>;
 };
@@ -33,6 +35,7 @@ type ProductRow = {
   discount_percent: number | null;
   buy_qty: number | null;
   get_qty: number | null;
+  buy_link: string | null;
   active: boolean | null;
   product_images: Array<{ image_url: string }> | null;
   product_categories:
@@ -59,6 +62,7 @@ export async function getCatalogData(categorySlug?: string): Promise<{
   products: CatalogProduct[];
   categories: CatalogCategory[];
 }> {
+  noStore();
   const supabase = getSupabaseClient();
   if (!supabase) {
     return { products: [], categories: [] };
@@ -76,7 +80,7 @@ export async function getCatalogData(categorySlug?: string): Promise<{
       supabase
         .from("products")
         .select(
-          "id,name,slug,description,price,original_price,offer_type,discount_percent,buy_qty,get_qty,active,product_images(image_url),product_categories(categories(id,name,slug))"
+          "id,name,slug,description,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,active,product_images(image_url),product_categories(categories(id,name,slug))"
         )
         .eq("active", true)
         .order("created_at", { ascending: false }),
@@ -123,6 +127,7 @@ export async function getCatalogData(categorySlug?: string): Promise<{
       discountPercent: item.discount_percent,
       buyQty: item.buy_qty,
       getQty: item.get_qty,
+      buyLink: item.buy_link,
       images: (item.product_images ?? []).map((img) => img.image_url),
       categories: (item.product_categories ?? [])
         .map((entry) => entry.categories)

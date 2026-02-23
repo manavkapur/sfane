@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { CART_ENABLED } from "@/lib/commerce-flags";
 
 type AddToCartButtonProps = {
   productId: number;
@@ -12,6 +13,10 @@ type AddToCartButtonProps = {
 export function AddToCartButton({ productId, compact = false }: AddToCartButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  if (!CART_ENABLED) {
+    return null;
+  }
 
   const onAddToCart = async () => {
     const supabase = getSupabaseBrowserClient();

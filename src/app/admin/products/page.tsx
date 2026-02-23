@@ -14,6 +14,8 @@ type AdminProduct = {
   product_images: Array<{ id: number; image_url: string }> | null;
 };
 
+const MAX_PRODUCT_IMAGE_URLS = 7;
+
 export default function AdminProductsPage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const router = useRouter();
@@ -25,7 +27,10 @@ export default function AdminProductsPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [price, setPrice] = useState("");
-  const [imageUrls, setImageUrls] = useState<string[]>(["", "", "", "", ""]);
+  const [buyLink, setBuyLink] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>(
+    Array.from({ length: MAX_PRODUCT_IMAGE_URLS }, () => "")
+  );
 
   const refreshProducts = async () => {
     if (!supabase) return;
@@ -73,8 +78,23 @@ export default function AdminProductsPage() {
       setMessage("Name, slug, and valid price are required.");
       return;
     }
+    if (buyLink.trim()) {
+      try {
+        const parsed = new URL(buyLink.trim());
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          setMessage("Buy link must start with http:// or https://");
+          return;
+        }
+      } catch {
+        setMessage("Buy link must be a valid URL.");
+        return;
+      }
+    }
 
-    const cleanImageUrls = imageUrls.map((value) => value.trim()).filter(Boolean).slice(0, 5);
+    const cleanImageUrls = imageUrls
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, MAX_PRODUCT_IMAGE_URLS);
 
     const { error } = await supabase.functions.invoke("admin-products", {
       method: "POST",
@@ -84,6 +104,7 @@ export default function AdminProductsPage() {
           name,
           slug,
           price: parsedPrice,
+          buy_link: buyLink.trim() || null,
           images: cleanImageUrls,
         },
       },
@@ -97,7 +118,8 @@ export default function AdminProductsPage() {
     setName("");
     setSlug("");
     setPrice("");
-    setImageUrls(["", "", "", "", ""]);
+    setBuyLink("");
+    setImageUrls(Array.from({ length: MAX_PRODUCT_IMAGE_URLS }, () => ""));
     setMessage("Product created.");
     await refreshProducts();
   };
@@ -165,6 +187,12 @@ export default function AdminProductsPage() {
             value={price}
             onChange={(event) => setPrice(event.target.value)}
             placeholder="Price"
+            className="rounded-full border border-[#d8c2b1] px-4 py-2 text-sm"
+          />
+          <input
+            value={buyLink}
+            onChange={(event) => setBuyLink(event.target.value)}
+            placeholder="Buy link URL (https://...)"
             className="rounded-full border border-[#d8c2b1] px-4 py-2 text-sm"
           />
           {imageUrls.map((imageUrl, index) => (

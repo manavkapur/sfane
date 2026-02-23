@@ -25,16 +25,16 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <h1 className="mt-2 text-3xl font-semibold text-[#1f140d]">All Products</h1>
         </div>
         <Link
-          href="/categories"
+          href="/products"
           className="rounded-full border border-[#e8d9cf] px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#6a4b36]"
         >
-          View Categories
+          View Products
         </Link>
       </header>
 
       <section className="mb-8 flex flex-wrap gap-2">
         <Link
-          href="/shop"
+          href="/products"
           className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] ${
             !category
               ? "bg-[#1f140d] text-white"
@@ -46,7 +46,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         {categories.map((item) => (
           <Link
             key={item.id}
-            href={`/shop?category=${item.slug}`}
+            href={`/products?category=${item.slug}`}
             className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] ${
               category === item.slug
                 ? "bg-[#1f140d] text-white"
@@ -66,7 +66,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               key={product.id}
               className="rounded-3xl border border-[#efe2d9] bg-white p-5 shadow-[0_15px_35px_rgba(31,20,13,0.08)]"
             >
-              <Link href={`/shop/${product.slug}`}>
+              <Link href={`/products/${product.slug}`}>
                 <img
                   src={primaryImage}
                   alt={product.name}
@@ -80,7 +80,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 <h2 className="mt-1 text-lg font-semibold text-[#1f140d]">{product.name}</h2>
                 <p className="mt-1 text-sm text-[#5b4739]">₹{product.price.toFixed(2)}</p>
                 <Link
-                  href={`/shop/${product.slug}`}
+                  href={`/products/${product.slug}`}
                   className="mt-4 inline-flex rounded-full bg-[#1f140d] px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white"
                 >
                   View Product

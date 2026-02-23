@@ -21,7 +21,7 @@ export default async function CategoriesPage() {
         {categories.map((category) => (
           <Link
             key={category.id}
-            href={`/shop?category=${category.slug}`}
+            href={`/products?category=${category.slug}`}
             className="rounded-3xl border border-[#efe2d9] bg-white p-5 shadow-[0_12px_30px_rgba(31,20,13,0.06)]"
           >
             <p className="text-lg font-semibold text-[#1f140d]">{category.name}</p>
