@@ -1057,7 +1057,7 @@ export default function Home() {
 
                 <div className="relative overflow-hidden rounded-[22px] sm:rounded-[26px]">
                   <Image
-                    src="/sfanelog1.jpg"
+                    src="/Bag_main.jpg"
                     alt="Sfane duffle bag in gym setting"
                     width={980}
                     height={700}
