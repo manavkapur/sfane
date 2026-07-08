@@ -278,6 +278,18 @@ function MaterialsSection() {
             />
           </div>
         </div>
+        <div className="relative left-1/2 mt-10 w-screen -translate-x-1/2 sm:mt-16">
+          <div className="absolute inset-x-0 -top-10 h-24 bg-[#f7f1ec] blur-3xl" />
+          <div className="relative w-full">
+            <Image
+              src="/Kit_list.jpg"
+              alt="Sfane kit lineup"
+              width={2200}
+              height={1000}
+              className="h-auto w-full object-cover drop-shadow-[0_30px_70px_rgba(20,12,10,0.2)]"
+            />
+          </div>
+        </div>
 
         <div className="mx-auto mt-8 max-w-4xl text-center text-sm text-[#6a4b36] sm:mt-12">
           Designed for daily wear with a finish that stays sharp over time.
