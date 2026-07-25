@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { normalizeProductSlug } from "@/lib/product-slug";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AdminProduct = {
@@ -15,6 +16,62 @@ type AdminProduct = {
 };
 
 const MAX_PRODUCT_IMAGE_URLS = 7;
+
+async function extractFunctionErrorMessage(
+  error:
+    | {
+        message?: string;
+        name?: string;
+        context?: Response;
+        response?: Response;
+        status?: number;
+        details?: string;
+      }
+    | null
+) {
+  if (!error) return "Unknown function error";
+
+  const response =
+    error.context ??
+    error.response ??
+    ((error as unknown as { cause?: { context?: Response; response?: Response } })?.cause?.context ??
+      (error as unknown as { cause?: { context?: Response; response?: Response } })?.cause?.response);
+
+  const status = response?.status ?? error.status ?? null;
+  const prefix = error.name ? `${error.name}` : "Function error";
+
+  if (response) {
+    try {
+      const textValue = await response.clone().text();
+      if (textValue) {
+        try {
+          const body = JSON.parse(textValue);
+          const backendError =
+            typeof body?.error === "string"
+              ? body.error
+              : typeof body?.message === "string"
+                ? body.message
+                : textValue;
+          return `${prefix}${status ? ` (${status})` : ""}: ${backendError}`;
+        } catch {
+          return `${prefix}${status ? ` (${status})` : ""}: ${textValue}`;
+        }
+      }
+    } catch {
+      // Fall through to message/details fallback.
+    }
+  }
+
+  if (error.details) {
+    return `${prefix}${status ? ` (${status})` : ""}: ${error.details}`;
+  }
+
+  if (error.message) {
+    return `${prefix}${status ? ` (${status})` : ""}: ${error.message}`;
+  }
+
+  return `${prefix}${status ? ` (${status})` : ""}`;
+}
 
 export default function AdminProductsPage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
@@ -74,7 +131,8 @@ export default function AdminProductsPage() {
     setMessage(null);
 
     const parsedPrice = Number(price);
-    if (!name || !slug || !Number.isFinite(parsedPrice)) {
+    const normalizedSlug = normalizeProductSlug(slug, name);
+    if (!name || !normalizedSlug || !Number.isFinite(parsedPrice)) {
       setMessage("Name, slug, and valid price are required.");
       return;
     }
@@ -102,7 +160,7 @@ export default function AdminProductsPage() {
         action: "create",
         product: {
           name,
-          slug,
+          slug: normalizedSlug,
           price: parsedPrice,
           buy_link: buyLink.trim() || null,
           images: cleanImageUrls,
@@ -111,7 +169,7 @@ export default function AdminProductsPage() {
     });
 
     if (error) {
-      setMessage(error.message);
+      setMessage(await extractFunctionErrorMessage(error as { message?: string; context?: Response }));
       return;
     }
 
@@ -136,7 +194,7 @@ export default function AdminProductsPage() {
     });
 
     if (error) {
-      setMessage(error.message);
+      setMessage(await extractFunctionErrorMessage(error as { message?: string; context?: Response }));
       return;
     }
 
@@ -173,13 +231,17 @@ export default function AdminProductsPage() {
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           <input
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              const nextName = event.target.value;
+              setName(nextName);
+              setSlug((currentSlug) => (currentSlug ? currentSlug : normalizeProductSlug("", nextName)));
+            }}
             placeholder="Name"
             className="rounded-full border border-[#d8c2b1] px-4 py-2 text-sm"
           />
           <input
             value={slug}
-            onChange={(event) => setSlug(event.target.value)}
+            onChange={(event) => setSlug(normalizeProductSlug(event.target.value))}
             placeholder="slug"
             className="rounded-full border border-[#d8c2b1] px-4 py-2 text-sm"
           />
@@ -208,6 +270,7 @@ export default function AdminProductsPage() {
           ))}
         </div>
         <button
+          type="button"
           onClick={createProduct}
           className="mt-4 rounded-full bg-[#1f140d] px-4 py-2 text-sm font-semibold text-white"
         >
@@ -228,6 +291,7 @@ export default function AdminProductsPage() {
               </div>
               {product.active ? (
                 <button
+                  type="button"
                   onClick={() => deactivateProduct(product.id)}
                   className="rounded-full border border-[#d8c2b1] px-4 py-2 text-sm font-semibold text-[#6a4b36]"
                 >

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { normalizeProductSlug } from "@/lib/product-slug";
 import {
   fetchAdminOrdersPayload,
   formatINR,
@@ -544,7 +545,8 @@ export default function AdminCmsPage() {
 
     setMessage(null);
     const price = Number(newProduct.price);
-    if (!newProduct.name || !newProduct.slug || !Number.isFinite(price)) {
+    const normalizedSlug = normalizeProductSlug(newProduct.slug, newProduct.name);
+    if (!newProduct.name || !normalizedSlug || !Number.isFinite(price)) {
       setMessage("Product name, slug, and price are required.");
       return;
     }
@@ -577,7 +579,7 @@ export default function AdminCmsPage() {
         action: "create",
         product: {
           name: newProduct.name,
-          slug: newProduct.slug,
+          slug: normalizedSlug,
           price,
           buy_link: newProduct.buyLink.trim() || null,
           images: imageUrls,
@@ -587,7 +589,7 @@ export default function AdminCmsPage() {
     });
 
     if (error) {
-      setMessage(error.message);
+      setMessage(await extractFunctionErrorMessage(error as { message?: string; context?: Response }));
       return;
     }
 
@@ -637,7 +639,7 @@ export default function AdminCmsPage() {
     });
 
     if (error) {
-      setMessage(error.message);
+      setMessage(await extractFunctionErrorMessage(error as { message?: string; context?: Response }));
       return;
     }
 
@@ -748,7 +750,7 @@ export default function AdminCmsPage() {
     });
 
     if (error) {
-      setMessage(error.message);
+      setMessage(await extractFunctionErrorMessage(error as { message?: string; context?: Response }));
       return;
     }
 
@@ -1154,13 +1156,24 @@ export default function AdminCmsPage() {
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <input
                 value={newProduct.name}
-                onChange={(e) => setNewProduct((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setNewProduct((prev) => {
+                    const name = e.target.value;
+                    return {
+                      ...prev,
+                      name,
+                      slug: prev.slug ? prev.slug : normalizeProductSlug("", name),
+                    };
+                  })
+                }
                 placeholder="Product name"
                 className="rounded-full border border-[#d0d0d0] px-4 py-2 text-sm"
               />
               <input
                 value={newProduct.slug}
-                onChange={(e) => setNewProduct((prev) => ({ ...prev, slug: e.target.value }))}
+                onChange={(e) =>
+                  setNewProduct((prev) => ({ ...prev, slug: normalizeProductSlug(e.target.value) }))
+                }
                 placeholder="slug"
                 className="rounded-full border border-[#d0d0d0] px-4 py-2 text-sm"
               />
@@ -1211,6 +1224,7 @@ export default function AdminCmsPage() {
               ))}
             </div>
             <button
+              type="button"
               onClick={createProduct}
               className="mt-4 rounded-full bg-[#1f140d] px-4 py-2 text-sm font-semibold text-white"
             >
@@ -1239,12 +1253,14 @@ export default function AdminCmsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button
+                        type="button"
                         onClick={() => toggleProductActive(product.id)}
                         className="rounded-full border border-[#d0d0d0] px-3 py-1 text-xs font-semibold text-[#333333]"
                       >
                         {product.active ? "Disable" : "Enable"}
                       </button>
                       <button
+                        type="button"
                         onClick={() => removeProduct(product.id)}
                         className="rounded-full border border-[#efc5c5] px-3 py-1 text-xs font-semibold text-[#9f2626]"
                       >

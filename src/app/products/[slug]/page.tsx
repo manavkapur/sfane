@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { ProductImageGallery } from "@/components/product-image-gallery";
 import { manrope, playfairDisplay } from "@/lib/fonts";
+import { normalizeProductSlug } from "@/lib/product-slug";
 import { absoluteUrl } from "@/lib/seo";
 import { getSupabaseClient } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
@@ -39,6 +40,15 @@ type ProductDetailRow = {
   product_categories: ProductCategoryRow[] | null;
 };
 
+type MetadataProductRow = {
+  name: string;
+  slug: string;
+  description: string | null;
+  price: number | string;
+  active: boolean | null;
+  product_images: Array<{ image_url: string | null }> | null;
+};
+
 function formatPrice(value: number | null | undefined) {
   if (value === null || value === undefined) {
     return "";
@@ -53,6 +63,76 @@ function formatPrice(value: number | null | undefined) {
 
 const headingFont = playfairDisplay;
 const bodyFont = manrope;
+
+async function findProductByRouteSlug(
+  routeSlug: string,
+  supabase: NonNullable<ReturnType<typeof getSupabaseClient>>
+) {
+  const { data: exactData, error: exactError } = await supabase
+    .from("products")
+    .select(
+      "id,name,slug,description,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,product_images(image_url),product_categories(category_id,categories(id,name,slug))"
+    )
+    .eq("slug", routeSlug)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (exactData) {
+    return exactData as ProductDetailRow;
+  }
+
+  if (exactError && exactError.code !== "PGRST116") {
+    throw exactError;
+  }
+
+  const normalizedRouteSlug = normalizeProductSlug(routeSlug);
+  if (!normalizedRouteSlug) {
+    return null;
+  }
+
+  const { data: fallbackRows, error: fallbackError } = await supabase
+    .from("products")
+    .select(
+      "id,name,slug,description,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,product_images(image_url),product_categories(category_id,categories(id,name,slug))"
+    )
+    .eq("active", true);
+
+  if (fallbackError) {
+    throw fallbackError;
+  }
+
+  const rows = (fallbackRows as ProductDetailRow[] | null) ?? [];
+  return rows.find((item) => normalizeProductSlug(item.slug, item.name) === normalizedRouteSlug) ?? null;
+}
+
+async function findMetadataProductByRouteSlug(
+  routeSlug: string,
+  supabase: NonNullable<ReturnType<typeof getSupabaseClient>>
+) {
+  const { data: exactData } = await supabase
+    .from("products")
+    .select("name,slug,description,price,active,product_images(image_url)")
+    .eq("slug", routeSlug)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (exactData) {
+    return exactData as MetadataProductRow;
+  }
+
+  const normalizedRouteSlug = normalizeProductSlug(routeSlug);
+  if (!normalizedRouteSlug) {
+    return null;
+  }
+
+  const { data: fallbackRows } = await supabase
+    .from("products")
+    .select("name,slug,description,price,active,product_images(image_url)")
+    .eq("active", true);
+
+  const rows = (fallbackRows as MetadataProductRow[] | null) ?? [];
+  return rows.find((item) => normalizeProductSlug(item.slug, item.name) === normalizedRouteSlug) ?? null;
+}
 
 export async function generateMetadata({
   params,
@@ -70,23 +150,7 @@ export async function generateMetadata({
     };
   }
 
-  const { data } = await supabase
-    .from("products")
-    .select("name,slug,description,price,active,product_images(image_url)")
-    .eq("slug", slug)
-    .eq("active", true)
-    .maybeSingle();
-
-  const product = (data as
-    | {
-        name: string;
-        slug: string;
-        description: string | null;
-        price: number | string;
-        active: boolean | null;
-        product_images: Array<{ image_url: string | null }> | null;
-      }
-    | null) ?? null;
+  const product = await findMetadataProductByRouteSlug(slug, supabase);
 
   if (!product) {
     return {
@@ -108,11 +172,11 @@ export async function generateMetadata({
   return {
     title: `${product.name} ${priceText ? `- ${priceText}` : ""}`.trim(),
     description,
-    alternates: { canonical: `/products/${product.slug}` },
+    alternates: { canonical: `/products/${normalizeProductSlug(product.slug, product.name)}` },
     openGraph: {
       title: `${product.name} | Sfane`,
       description,
-      url: `/products/${product.slug}`,
+      url: `/products/${normalizeProductSlug(product.slug, product.name)}`,
       type: "website",
       images: [
         {
@@ -152,18 +216,9 @@ export default async function ProductDetailPage({
     );
   }
 
-  const { data: productData, error } = await supabase
-    .from("products")
-    .select(
-      "id,name,slug,description,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,product_images(image_url),product_categories(category_id,categories(id,name,slug))"
-    )
-    .eq("slug", slug)
-    .eq("active", true)
-    .single();
+  const data = await findProductByRouteSlug(slug, supabase);
 
-  const data = (productData as ProductDetailRow | null) ?? null;
-
-  if (error || !data) {
+  if (!data) {
     notFound();
   }
 
@@ -220,7 +275,7 @@ export default async function ProductDetailPage({
       priceCurrency: "INR",
       price: Number(currentPrice),
       availability: "https://schema.org/InStock",
-      url: absoluteUrl(`/products/${data.slug}`),
+      url: absoluteUrl(`/products/${normalizeProductSlug(data.slug, data.name)}`),
     },
   };
   const breadcrumbSchema = {
@@ -237,7 +292,7 @@ export default async function ProductDetailPage({
         "@type": "ListItem",
         position: 2,
         name: data.name,
-        item: absoluteUrl(`/products/${data.slug}`),
+        item: absoluteUrl(`/products/${normalizeProductSlug(data.slug, data.name)}`),
       },
     ],
   };

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { normalizeProductSlug } from "@/lib/product-slug";
 import { cn } from "@/lib/utils";
 
 export type ProductCardData = {
@@ -31,6 +32,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   const imageUrl = product.image_url || "/Allbags.png";
   const hoverImageUrl = product.hover_image_url || imageUrl;
   const hasSecondImage = Boolean(product.hover_image_url && product.hover_image_url !== imageUrl);
+  const productHref = `/products/${normalizeProductSlug(product.slug, product.name)}`;
 
   return (
     <div
@@ -40,7 +42,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       )}
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(255,255,255,0.34),transparent_45%,rgba(214,185,163,0.08))] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      <Link href={`/products/${product.slug}`} className="block">
+      <Link href={productHref} className="block">
         <div className="relative aspect-[4/5] w-full overflow-hidden bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.95),rgba(245,237,230,0.9)_58%,rgba(241,232,224,0.88))]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -71,7 +73,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       </Link>
 
       <div className="flex flex-1 flex-col gap-2.5 px-6 pb-6 pt-5">
-        <Link href={`/products/${product.slug}`}>
+        <Link href={productHref}>
           <h3 className="line-clamp-2 text-[1.35rem] font-semibold leading-tight text-[#1f140d]">{product.name}</h3>
         </Link>
         <div className="flex items-end gap-2">
@@ -97,7 +99,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             </a>
           ) : null}
           <Link
-            href={`/products/${product.slug}`}
+            href={productHref}
             className="rounded-full border border-[#d9c8bc] bg-white/70 px-4 py-2.5 text-sm font-semibold text-[#6a4b36] transition hover:border-[#cdb49f] hover:bg-[#f8f2ed]"
           >
             View
