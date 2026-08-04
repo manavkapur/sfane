@@ -1272,6 +1272,30 @@ export default function AdminCmsPage() {
                 </button>
               ) : null}
             </div>
+            {editingProductId ? (
+              <div className="mt-4 overflow-hidden rounded-2xl border border-[#e4d7cc] bg-[linear-gradient(145deg,#fffdfb,#f7efe9)] p-3">
+                <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#76533d]">Live storefront preview</p>
+                <div className="flex items-center gap-4">
+                  <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-white shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={newProduct.imageUrls.find((url) => url.trim()) || "/sfanelogo.png"}
+                      alt={newProduct.name || "Product preview"}
+                      className="h-full w-full object-contain p-2"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="line-clamp-2 font-semibold text-[#1f140d]">{newProduct.name || "Product name"}</p>
+                    <p className="mt-1 text-sm font-semibold text-[#1f140d]">
+                      {newProduct.price ? formatINR(Number(newProduct.price) || 0) : "Add a price"}
+                    </p>
+                    <p className="mt-1 text-xs text-[#76533d]">
+                      {PRODUCT_CATEGORY_OPTIONS.find((option) => option.slug === newProduct.category)?.label} · Image updates live as you edit
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <input
                 value={newProduct.name}
@@ -1374,10 +1398,15 @@ export default function AdminCmsPage() {
                 />
               </div>
               {renderedProducts.map((product, index) => (
-                <div key={product.id} className="rounded-2xl border border-[#e7e7e7] p-4">
+                <div key={product.id} className="rounded-2xl border border-[#e7e7e7] p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-[#1f140d]">{product.name}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-[#eee2d8] bg-[#faf6f2]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={product.imageUrl} alt="" className="h-full w-full object-contain p-1.5" />
+                      </div>
+                      <div className="min-w-0">
+                      <p className="line-clamp-2 font-semibold text-[#1f140d]">{product.name}</p>
                       <p className="text-sm text-[#333333]">
                         {formatINR(product.price)} · {product.category} · {product.active ? "Active" : "Inactive"}
                       </p>
@@ -1391,6 +1420,7 @@ export default function AdminCmsPage() {
                           Buy link
                         </a>
                       ) : null}
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button
