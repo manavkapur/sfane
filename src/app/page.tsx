@@ -122,6 +122,114 @@ function VideoSection() {
   );
 }
 
+
+function VideoSection2() {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  return (
+    <>
+      <section className="relative h-[56vh] min-h-[300px] w-full overflow-hidden sm:h-[62vh] sm:min-h-[360px] md:snap-start md:h-screen">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="group absolute inset-0 h-full w-full"
+        >
+          <video
+            src="/safneVideo.mp4"
+            poster="/sfanelogo.png"
+            preload="metadata"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/50" />
+
+          <div className="absolute inset-0 flex items-center justify-center px-4 sm:px-6">
+            <div className="max-w-3xl text-center text-white">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/80">
+                Brand Film
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold sm:mt-4 sm:text-3xl md:text-5xl">
+                Built for the daily carry.
+              </h2>
+              <p className="mt-3 text-sm text-white/80 sm:mt-4 sm:text-base md:text-lg">
+                A quick look at how Sfane bags move with you—gym, office, and
+                weekend travel.
+              </p>
+
+              <span className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-white/60 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white shadow-lg backdrop-blur-md transition group-hover:scale-[1.03] sm:mt-8 sm:gap-3 sm:px-6 sm:py-3 sm:text-sm">
+                Watch the film
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#1f140d] sm:h-8 sm:w-8">
+                  ▶
+                </span>
+              </span>
+            </div>
+          </div>
+        </button>
+      </section>
+
+      {open && typeof window !== "undefined"
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[120] overflow-x-hidden overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(50,33,24,0.35),rgba(8,6,5,0.95))] px-2 py-3 backdrop-blur-sm sm:px-6 sm:py-6"
+              onClick={() => setOpen(false)}
+            >
+              <div className="mx-auto flex min-h-full w-full items-center justify-center">
+                <div
+                  className="w-full max-w-[calc(100vw-1rem)] overflow-hidden rounded-[22px] border border-white/15 bg-[#12100d] shadow-[0_35px_90px_rgba(0,0,0,0.55)] sm:max-w-4xl"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-[linear-gradient(90deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-3 py-3 sm:px-5">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-white/60">
+                        Sfane Film
+                      </p>
+                      <p className="mt-1 truncate text-sm font-medium text-white/90">Built for the daily carry</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOpen(false)}
+                      className="inline-flex h-9 shrink-0 items-center rounded-full border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white transition hover:bg-white/20"
+                    >
+                      Close
+                    </button>
+                  </div>
+
+                  <div className="w-full bg-black">
+                    <div className="aspect-video max-h-[72dvh] w-full">
+                      <video
+                        src="/safneVideo.mp4"
+                        controls
+                        autoPlay
+                        muted
+                        playsInline
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
+    </>
+  );
+}
+
 function BestSellersSection() {
   const categories = [
     {
@@ -272,18 +380,6 @@ function MaterialsSection() {
             <Image
               src="/Allbags.png"
               alt="Sfane bag lineup"
-              width={2200}
-              height={1000}
-              className="h-auto w-full object-cover drop-shadow-[0_30px_70px_rgba(20,12,10,0.2)]"
-            />
-          </div>
-        </div>
-        <div className="relative left-1/2 mt-10 w-screen -translate-x-1/2 sm:mt-16">
-          <div className="absolute inset-x-0 -top-10 h-24 bg-[#f7f1ec] blur-3xl" />
-          <div className="relative w-full">
-            <Image
-              src="/Kit_list.jpg"
-              alt="Sfane kit lineup"
               width={2200}
               height={1000}
               className="h-auto w-full object-cover drop-shadow-[0_30px_70px_rgba(20,12,10,0.2)]"
