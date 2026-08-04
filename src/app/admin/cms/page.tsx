@@ -30,9 +30,11 @@ type AdminProduct = {
   slug: string;
   price: number;
   category: string;
+  categorySlugs: string[];
   stock: number;
   active: boolean;
   imageUrl: string;
+  imageUrls: string[];
   buyLink: string | null;
   offerType: "NONE" | "PERCENT" | "FIXED" | "BUY_X_GET_Y" | "QTY_TIER_30_40";
   discountValue: number | null;
@@ -40,6 +42,7 @@ type AdminProduct = {
   getQty: number | null;
   discountStart: string | null;
   discountEnd: string | null;
+  displayRank: number;
 };
 
 type AdminProductRow = {
@@ -50,13 +53,14 @@ type AdminProductRow = {
   active: boolean;
   buy_link: string | null;
   product_images: Array<{ image_url: string }> | null;
-  product_categories: Array<{ categories: { name: string } | null }> | null;
+  product_categories: Array<{ categories: { name: string; slug: string } | null }> | null;
   offer_type: string | null;
   discount_percent: number | null;
   buy_qty: number | null;
   get_qty: number | null;
   discount_start: string | null;
   discount_end: string | null;
+  display_rank?: number | null;
 };
 
 type AdminCoupon = {
@@ -103,6 +107,7 @@ type NewProductForm = {
 const initialCoupons: AdminCoupon[] = [];
 const MAX_PRODUCT_IMAGE_URLS = 7;
 const ORDERS_PAGE_SIZE = 5;
+const PRODUCTS_PAGE_SIZE = 12;
 
 function mapBackendProductToAdminProduct(product: AdminProductRow): AdminProduct {
   const category =
@@ -110,6 +115,10 @@ function mapBackendProductToAdminProduct(product: AdminProductRow): AdminProduct
       ?.map((item) => item.categories?.name)
       .filter(Boolean)
       .join(", ") || "Uncategorized";
+  const categorySlugs =
+    product.product_categories
+      ?.map((item) => item.categories?.slug)
+      .filter((slug): slug is string => Boolean(slug)) ?? [];
 
   return {
     id: product.id,
@@ -117,9 +126,11 @@ function mapBackendProductToAdminProduct(product: AdminProductRow): AdminProduct
     slug: product.slug,
     price: Number(product.price),
     category,
+    categorySlugs,
     stock: 0,
     active: product.active,
     imageUrl: product.product_images?.[0]?.image_url || "/sfanelogo.png",
+    imageUrls: product.product_images?.map((image) => image.image_url).filter(Boolean) ?? [],
     buyLink: product.buy_link,
     offerType:
       product.offer_type === "PERCENT" ||
@@ -133,6 +144,7 @@ function mapBackendProductToAdminProduct(product: AdminProductRow): AdminProduct
     getQty: product.get_qty,
     discountStart: product.discount_start,
     discountEnd: product.discount_end,
+    displayRank: Number(product.display_rank ?? 0),
   };
 }
 
@@ -156,6 +168,21 @@ function parseFlexibleNumber(value: string) {
   if (!normalized) return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function fuzzyMatches(value: string, query: string) {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  const haystack = value.toLowerCase();
+  if (haystack.includes(needle)) return true;
+
+  let position = 0;
+  for (const character of needle) {
+    position = haystack.indexOf(character, position);
+    if (position === -1) return false;
+    position += 1;
+  }
+  return true;
 }
 
 function toIsoDateTimeOrNull(value: string) {
@@ -260,6 +287,11 @@ export default function AdminCmsPage() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [productSearch, setProductSearch] = useState("");
+  const [productCategoryFilter, setProductCategoryFilter] = useState<"ALL" | ProductCategorySlug>("ALL");
+  const [visibleProductCount, setVisibleProductCount] = useState(PRODUCTS_PAGE_SIZE);
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  const [savingProductId, setSavingProductId] = useState<number | null>(null);
   const [coupons, setCoupons] = useState<AdminCoupon[]>(initialCoupons);
 
   const [sessionReady, setSessionReady] = useState(!supabase);
@@ -521,6 +553,26 @@ export default function AdminCmsPage() {
   const activeOfferProducts = products.filter(
     (product) => product.active && product.offerType !== "NONE"
   );
+  const filteredProducts = useMemo(
+    () =>
+      products
+        .filter((product) =>
+          productCategoryFilter === "ALL" || product.categorySlugs.includes(productCategoryFilter)
+        )
+        .filter((product) => fuzzyMatches(`${product.name} ${product.slug} ${product.category}`, productSearch))
+        .sort(
+          (left, right) =>
+            right.displayRank - left.displayRank ||
+            left.category.localeCompare(right.category) ||
+            left.name.localeCompare(right.name)
+        ),
+    [products, productCategoryFilter, productSearch]
+  );
+  const renderedProducts = filteredProducts.slice(0, visibleProductCount);
+
+  useEffect(() => {
+    setVisibleProductCount(PRODUCTS_PAGE_SIZE);
+  }, [productSearch, productCategoryFilter]);
 
   const updateOrderStatus = async (orderId: number, status: OrderStatus) => {
     if (!supabase) return;
@@ -568,7 +620,7 @@ export default function AdminCmsPage() {
       }
     }
 
-    const createdName = newProduct.name;
+    const productName = newProduct.name;
     const imageUrls = newProduct.imageUrls
       .map((value) => value.trim())
       .filter(Boolean)
@@ -576,8 +628,9 @@ export default function AdminCmsPage() {
     const { error } = await supabase.functions.invoke("admin-products", {
       method: "POST",
       body: {
-        action: "create",
+        action: editingProductId ? "update" : "create",
         product: {
+          ...(editingProductId ? { id: editingProductId } : {}),
           name: newProduct.name,
           slug: normalizedSlug,
           price,
@@ -593,16 +646,8 @@ export default function AdminCmsPage() {
       return;
     }
 
-    setNewProduct({
-      name: "",
-      slug: "",
-      price: "",
-      category: DEFAULT_PRODUCT_CATEGORY,
-      stock: "",
-      buyLink: "",
-      imageUrls: Array.from({ length: MAX_PRODUCT_IMAGE_URLS }, () => ""),
-    });
-    setMessage(`Product ${createdName} created.`);
+    cancelEditingProduct();
+    setMessage(`Product ${productName} ${editingProductId ? "updated" : "created"}.`);
     await refreshProducts();
   };
 
@@ -643,6 +688,68 @@ export default function AdminCmsPage() {
       return;
     }
 
+    await refreshProducts();
+  };
+
+  const beginEditingProduct = (product: AdminProduct) => {
+    const category = product.categorySlugs.find((slug): slug is ProductCategorySlug =>
+      (PRODUCT_CATEGORY_OPTIONS.map((option) => option.slug) as readonly string[]).includes(slug)
+    );
+    setEditingProductId(product.id);
+    setNewProduct({
+      name: product.name,
+      slug: product.slug,
+      price: String(product.price),
+      category: category ?? DEFAULT_PRODUCT_CATEGORY,
+      stock: String(product.stock),
+      buyLink: product.buyLink ?? "",
+      imageUrls: Array.from(
+        { length: MAX_PRODUCT_IMAGE_URLS },
+        (_, index) => product.imageUrls[index] ?? ""
+      ),
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEditingProduct = () => {
+    setEditingProductId(null);
+    setNewProduct({
+      name: "", slug: "", price: "", category: DEFAULT_PRODUCT_CATEGORY, stock: "", buyLink: "",
+      imageUrls: Array.from({ length: MAX_PRODUCT_IMAGE_URLS }, () => ""),
+    });
+  };
+
+  const moveProductHigher = async (product: AdminProduct) => {
+    if (!supabase || savingProductId !== null) return;
+    const categoryProducts = filteredProducts.filter((item) => item.categorySlugs.some((slug) => product.categorySlugs.includes(slug)));
+    const index = categoryProducts.findIndex((item) => item.id === product.id);
+    if (index <= 0) return;
+
+    const higherProduct = categoryProducts[index - 1];
+    setSavingProductId(product.id);
+    setProducts((current) =>
+      current.map((item) => {
+        if (item.id === product.id) return { ...item, displayRank: higherProduct.displayRank + 1 };
+        if (item.id === higherProduct.id) return { ...item, displayRank: product.displayRank };
+        return item;
+      })
+    );
+
+    const results = await Promise.all([
+      supabase.functions.invoke("admin-products", {
+        method: "POST", body: { action: "update", product: { id: product.id, display_rank: higherProduct.displayRank + 1 } },
+      }),
+      supabase.functions.invoke("admin-products", {
+        method: "POST", body: { action: "update", product: { id: higherProduct.id, display_rank: product.displayRank } },
+      }),
+    ]);
+    const failed = results.find((result) => result.error)?.error;
+    if (failed) {
+      setMessage(`Could not update display order: ${await extractFunctionErrorMessage(failed as { message?: string; context?: Response })}`);
+    } else {
+      setMessage(`${product.name} moved higher in ${product.category}.`);
+    }
+    setSavingProductId(null);
     await refreshProducts();
   };
 
@@ -1152,7 +1259,19 @@ export default function AdminCmsPage() {
 
         <section className="grid gap-6 lg:grid-cols-2">
           <article className="rounded-3xl border border-[#e2e2e2] bg-white p-6">
-            <h2 className="text-xl font-semibold text-[#1f140d]">Products</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-xl font-semibold text-[#1f140d]">{editingProductId ? "Edit product" : "Add product"}</h2>
+                <p className="mt-1 text-xs text-[#666666]">
+                  {editingProductId ? "Update the details below, then save your changes." : "Create a product and assign its category."}
+                </p>
+              </div>
+              {editingProductId ? (
+                <button type="button" onClick={cancelEditingProduct} className="rounded-full border border-[#d0d0d0] px-3 py-1.5 text-xs font-semibold text-[#333333]">
+                  Cancel edit
+                </button>
+              ) : null}
+            </div>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <input
                 value={newProduct.name}
@@ -1228,11 +1347,33 @@ export default function AdminCmsPage() {
               onClick={createProduct}
               className="mt-4 rounded-full bg-[#1f140d] px-4 py-2 text-sm font-semibold text-white"
             >
-              Add product
+              {editingProductId ? "Save changes" : "Add product"}
             </button>
 
             <div className="mt-5 space-y-3">
-              {products.map((product) => (
+              <div className="rounded-2xl border border-[#e7e7e7] bg-[#fafafa] p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-[#1f140d]">Catalog ({filteredProducts.length})</p>
+                    <p className="text-xs text-[#666666]">Sorted by category and display rank. Showing {renderedProducts.length} at a time.</p>
+                  </div>
+                  <select
+                    value={productCategoryFilter}
+                    onChange={(event) => setProductCategoryFilter(event.target.value as "ALL" | ProductCategorySlug)}
+                    className="rounded-full border border-[#d0d0d0] bg-white px-3 py-2 text-xs"
+                  >
+                    <option value="ALL">All categories</option>
+                    {PRODUCT_CATEGORY_OPTIONS.map((option) => <option key={option.slug} value={option.slug}>{option.label}</option>)}
+                  </select>
+                </div>
+                <input
+                  value={productSearch}
+                  onChange={(event) => setProductSearch(event.target.value)}
+                  placeholder="Search products (partial names work too)"
+                  className="mt-3 w-full rounded-full border border-[#d0d0d0] bg-white px-4 py-2 text-sm"
+                />
+              </div>
+              {renderedProducts.map((product, index) => (
                 <div key={product.id} className="rounded-2xl border border-[#e7e7e7] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
@@ -1252,6 +1393,22 @@ export default function AdminCmsPage() {
                       ) : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void moveProductHigher(product)}
+                        disabled={savingProductId !== null || index === 0}
+                        title="Move higher within this category"
+                        className="rounded-full border border-[#d0d0d0] px-3 py-1 text-xs font-semibold text-[#333333] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        ↑ Move up
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => beginEditingProduct(product)}
+                        className="rounded-full border border-[#d0d0d0] px-3 py-1 text-xs font-semibold text-[#333333]"
+                      >
+                        Edit
+                      </button>
                       <button
                         type="button"
                         onClick={() => toggleProductActive(product.id)}
@@ -1280,6 +1437,18 @@ export default function AdminCmsPage() {
                   ) : null}
                 </div>
               ))}
+              {!renderedProducts.length ? (
+                <p className="rounded-2xl border border-dashed border-[#d8d8d8] p-4 text-sm text-[#666666]">No products match this search.</p>
+              ) : null}
+              {renderedProducts.length < filteredProducts.length ? (
+                <button
+                  type="button"
+                  onClick={() => setVisibleProductCount((current) => current + PRODUCTS_PAGE_SIZE)}
+                  className="w-full rounded-full border border-[#d0d0d0] px-4 py-2 text-sm font-semibold text-[#333333]"
+                >
+                  Show more products ({renderedProducts.length}/{filteredProducts.length})
+                </button>
+              ) : null}
             </div>
           </article>
 

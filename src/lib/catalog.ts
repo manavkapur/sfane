@@ -83,6 +83,7 @@ export async function getCatalogData(categorySlug?: string): Promise<{
           "id,name,slug,description,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,active,product_images(image_url),product_categories(categories(id,name,slug))"
         )
         .eq("active", true)
+        .order("display_rank", { ascending: false })
         .order("created_at", { ascending: false }),
       supabase
         .from("categories")

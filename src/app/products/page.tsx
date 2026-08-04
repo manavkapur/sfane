@@ -18,6 +18,7 @@ type ProductListRow = {
   get_qty: number | null;
   buy_link: string | null;
   created_at: string;
+  display_rank: number | null;
   product_images: Array<{ image_url: string | null }> | null;
 };
 
@@ -98,8 +99,8 @@ export default async function ProductsPage({
       .from("products")
       .select(
         params.category
-          ? "id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,created_at,product_images(image_url),product_categories!inner(categories!inner(slug))"
-          : "id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,created_at,product_images(image_url)"
+          ? "id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,created_at,display_rank,product_images(image_url),product_categories!inner(categories!inner(slug))"
+          : "id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,created_at,display_rank,product_images(image_url)"
       )
       .eq("active", true);
 
@@ -122,7 +123,7 @@ export default async function ProductsPage({
     } else if (params.sort === "price-desc") {
       query = query.order("price", { ascending: false });
     } else {
-      query = query.order("created_at", { ascending: false });
+      query = query.order("display_rank", { ascending: false }).order("created_at", { ascending: false });
     }
 
     const { data: productsRaw, error } = await query;
@@ -179,7 +180,7 @@ export default async function ProductsPage({
           </div>
         </div>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
