@@ -37,8 +37,8 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   return (
     <div
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-[22px] border border-[#eadfd5]/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(250,245,240,0.92))] shadow-[0_4px_12px_rgba(20,12,10,0.06)] sm:rounded-[28px] sm:shadow-[0_18px_46px_rgba(20,12,10,0.12)]",
-        "transition duration-300 hover:border-[#dbc8ba] sm:hover:-translate-y-1.5 sm:hover:shadow-[0_30px_78px_rgba(20,12,10,0.17)]"
+        "group relative flex flex-col overflow-hidden rounded-[22px] border border-[#eadfd5]/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(250,245,240,0.92))] shadow-[0_18px_46px_rgba(20,12,10,0.12)] sm:rounded-[28px]",
+        "transition duration-300 hover:-translate-y-1.5 hover:border-[#dbc8ba] hover:shadow-[0_30px_78px_rgba(20,12,10,0.17)]"
       )}
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(255,255,255,0.34),transparent_45%,rgba(214,185,163,0.08))] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -48,7 +48,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           <img
             src={imageUrl}
             alt={product.name}
-            className={`absolute inset-0 h-full w-full object-contain p-4 mix-blend-multiply saturate-[1.08] contrast-[1.06] transition duration-500 sm:p-7 sm:drop-shadow-[0_16px_26px_rgba(0,0,0,0.18)] ${
+            className={`absolute inset-0 h-full w-full object-contain p-4 mix-blend-multiply drop-shadow-[0_16px_26px_rgba(0,0,0,0.18)] saturate-[1.08] contrast-[1.06] transition duration-500 sm:p-7 ${
               hasSecondImage ? "opacity-100 group-hover:scale-[1.02] group-hover:opacity-0" : "group-hover:scale-[1.04]"
             }`}
             loading="lazy"
@@ -57,7 +57,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           <img
             src={hoverImageUrl}
             alt={`${product.name} alternate`}
-            className={`absolute inset-0 h-full w-full object-contain p-4 mix-blend-multiply saturate-[1.08] contrast-[1.06] transition duration-500 sm:p-7 sm:drop-shadow-[0_16px_26px_rgba(0,0,0,0.18)] ${
+            className={`absolute inset-0 h-full w-full object-contain p-4 mix-blend-multiply drop-shadow-[0_16px_26px_rgba(0,0,0,0.18)] saturate-[1.08] contrast-[1.06] transition duration-500 sm:p-7 ${
               hasSecondImage ? "opacity-0 group-hover:scale-[1.04] group-hover:opacity-100" : "hidden"
             }`}
             loading="lazy"
