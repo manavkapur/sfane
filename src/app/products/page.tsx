@@ -20,6 +20,7 @@ type ProductListRow = {
   created_at: string;
   display_rank: number | null;
   product_images: Array<{ image_url: string | null }> | null;
+  product_categories: Array<{ categories: { slug: string } | null }> | null;
 };
 
 const headingFont = playfairDisplay;
@@ -95,44 +96,42 @@ export default async function ProductsPage({
     backendMessage =
       "Missing Supabase env vars. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.";
   } else {
-    let query = supabase
-      .from("products")
-      .select(
-        params.category
-          ? "id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,created_at,display_rank,product_images(image_url),product_categories!inner(categories!inner(slug))"
-          : "id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,created_at,display_rank,product_images(image_url)"
-      )
-      .eq("active", true);
+    const fetchProducts = (includeDisplayRank: boolean) => {
+      let query = supabase
+        .from("products")
+        .select(
+          `id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,created_at${
+            includeDisplayRank ? ",display_rank" : ""
+          },product_images(image_url),product_categories(categories(slug))`
+        )
+        .eq("active", true);
 
-    if (params.category) {
-      query = query
-        .eq("product_categories.categories.slug", params.category)
-        .eq("product_categories.categories.active", true);
+      if (params.filter === "offers") query = query.neq("offer_type", "NONE");
+      if (params.q) query = query.ilike("name", `%${params.q}%`);
+
+      if (params.sort === "price-asc") return query.order("price", { ascending: true });
+      if (params.sort === "price-desc") return query.order("price", { ascending: false });
+      return includeDisplayRank
+        ? query.order("display_rank", { ascending: false }).order("created_at", { ascending: false })
+        : query.order("created_at", { ascending: false });
+    };
+
+    let { data: productsRaw, error } = await fetchProducts(true);
+
+    // Keep category pages live while the display-rank migration is being rolled out.
+    if (error?.message.toLowerCase().includes("display_rank")) {
+      ({ data: productsRaw, error } = await fetchProducts(false));
     }
-
-    if (params.filter === "offers") {
-      query = query.neq("offer_type", "NONE");
-    }
-
-    if (params.q) {
-      query = query.ilike("name", `%${params.q}%`);
-    }
-
-    if (params.sort === "price-asc") {
-      query = query.order("price", { ascending: true });
-    } else if (params.sort === "price-desc") {
-      query = query.order("price", { ascending: false });
-    } else {
-      query = query.order("display_rank", { ascending: false }).order("created_at", { ascending: false });
-    }
-
-    const { data: productsRaw, error } = await query;
 
     if (error) {
       throw new Error(error.message);
     }
 
-    const data = (productsRaw as ProductListRow[] | null) ?? [];
+    const data = ((productsRaw as ProductListRow[] | null) ?? []).filter((product) =>
+      params.category
+        ? product.product_categories?.some((item) => item.categories?.slug === params.category)
+        : true
+    );
 
     products = data.map((product) => ({
       id: product.id,
