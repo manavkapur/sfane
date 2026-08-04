@@ -6,8 +6,6 @@ import { manrope, playfairDisplay } from "@/lib/fonts";
 import { absoluteUrl } from "@/lib/seo";
 import { getSupabaseClient } from "@/lib/supabase";
 
-type CategoryRow = { id: number };
-type ProductCategoryMapRow = { product_id: number | null };
 type ProductListRow = {
   id: number;
   name: string;
@@ -96,99 +94,61 @@ export default async function ProductsPage({
     backendMessage =
       "Missing Supabase env vars. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.";
   } else {
-    let categoryProductIds: number[] | null = null;
-
-    if (params.category) {
-      const { data: categoryRowRaw, error: categoryError } = await supabase
-        .from("categories")
-        .select("id")
-        .eq("slug", params.category)
-        .eq("active", true)
-        .maybeSingle();
-      const categoryRow = (categoryRowRaw as CategoryRow | null) ?? null;
-
-      if (categoryError) {
-        throw new Error(categoryError.message);
-      }
-
-      if (!categoryRow) {
-        categoryProductIds = [];
-      } else {
-        const { data: mappedRowsRaw, error: mappedError } = await supabase
-          .from("product_categories")
-          .select("product_id")
-          .eq("category_id", categoryRow.id);
-
-        if (mappedError) {
-          throw new Error(mappedError.message);
-        }
-
-        const mappedRows = (mappedRowsRaw as ProductCategoryMapRow[] | null) ?? [];
-        categoryProductIds = mappedRows
-          .map((row) => row.product_id)
-          .filter((value): value is number => typeof value === "number");
-      }
-    }
-
     let query = supabase
       .from("products")
       .select(
-        "id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,created_at,product_images(image_url)"
+        params.category
+          ? "id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,created_at,product_images(image_url),product_categories!inner(categories!inner(slug))"
+          : "id,name,slug,price,original_price,offer_type,discount_percent,buy_qty,get_qty,buy_link,created_at,product_images(image_url)"
       )
       .eq("active", true);
 
     if (params.category) {
-      if (!categoryProductIds || categoryProductIds.length === 0) {
-        products = [];
-      } else {
-        query = query.in("id", categoryProductIds);
-      }
+      query = query
+        .eq("product_categories.categories.slug", params.category)
+        .eq("product_categories.categories.active", true);
     }
 
-    if (products.length === 0 && params.category && (!categoryProductIds || categoryProductIds.length === 0)) {
-      // Skip query when category has no mapped products.
-    } else if (params.filter === "offers") {
+    if (params.filter === "offers") {
       query = query.neq("offer_type", "NONE");
     }
 
-    if (products.length !== 0 || !params.category || (categoryProductIds && categoryProductIds.length > 0)) {
-      if (params.q) {
-        query = query.ilike("name", `%${params.q}%`);
-      }
-
-      if (params.sort === "price-asc") {
-        query = query.order("price", { ascending: true });
-      } else if (params.sort === "price-desc") {
-        query = query.order("price", { ascending: false });
-      } else {
-        query = query.order("created_at", { ascending: false });
-      }
-
-      const { data: productsRaw, error } = await query;
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const data = (productsRaw as ProductListRow[] | null) ?? [];
-
-      products = data.map((product) => ({
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        price: Number(product.price),
-        original_price: product.original_price ? Number(product.original_price) : null,
-        buy_link: product.buy_link,
-        image_url: product.product_images?.[0]?.image_url || null,
-        hover_image_url: product.product_images?.[1]?.image_url || null,
-        badge: buildBadge({
-          offer_type: product.offer_type,
-          discount_percent: product.discount_percent,
-          buy_qty: product.buy_qty,
-          get_qty: product.get_qty,
-        }),
-      }));
+    if (params.q) {
+      query = query.ilike("name", `%${params.q}%`);
     }
+
+    if (params.sort === "price-asc") {
+      query = query.order("price", { ascending: true });
+    } else if (params.sort === "price-desc") {
+      query = query.order("price", { ascending: false });
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
+
+    const { data: productsRaw, error } = await query;
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const data = (productsRaw as ProductListRow[] | null) ?? [];
+
+    products = data.map((product) => ({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: Number(product.price),
+      original_price: product.original_price ? Number(product.original_price) : null,
+      buy_link: product.buy_link,
+      image_url: product.product_images?.[0]?.image_url || null,
+      hover_image_url: product.product_images?.[1]?.image_url || null,
+      badge: buildBadge({
+        offer_type: product.offer_type,
+        discount_percent: product.discount_percent,
+        buy_qty: product.buy_qty,
+        get_qty: product.get_qty,
+      }),
+    }));
   }
 
   return (

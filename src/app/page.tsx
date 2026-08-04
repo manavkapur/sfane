@@ -8,6 +8,7 @@ import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { manrope, playfairDisplay } from "@/lib/fonts";
 
 import { SiteHeader } from "@/components/site-header";
+import { CategoryCardLink } from "@/components/category-card-link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -287,7 +288,7 @@ function BestSellersSection() {
               whileTap={{ scale: 0.985 }}
               className="group"
             >
-              <Link
+              <CategoryCardLink
                 href={`/products?category=${category.slug}`}
                 className="relative block overflow-hidden rounded-[30px] border border-[#f1dfd0]/65 bg-[linear-gradient(160deg,rgba(250,245,240,0.28),rgba(235,220,206,0.12))] shadow-[0_26px_70px_rgba(20,12,10,0.18)] backdrop-blur-md transition-all duration-300 hover:border-[#f4e7da] hover:shadow-[0_38px_95px_rgba(20,12,10,0.24)]"
               >
@@ -348,7 +349,7 @@ function BestSellersSection() {
                   >
                   </motion.div>
                 </div>
-              </Link>
+              </CategoryCardLink>
             </motion.div>
           ))}
         </div>
