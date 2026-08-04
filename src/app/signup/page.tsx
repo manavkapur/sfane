@@ -33,9 +33,17 @@ function SignupContent() {
     setLoading(true);
     setMessage(null);
 
+    // Supabase otherwise uses its project-level Site URL, which is often still
+    // localhost from initial setup. Use the actual origin the customer signed up on.
+    const safeRedirectPath = redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/account";
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: password.trim(),
+      options: {
+        emailRedirectTo: `${window.location.origin}${safeRedirectPath}`,
+      },
     });
 
     if (error) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { passwordResetRedirectUrl } from "@/lib/auth-redirects";
 
 async function verifyAdminAccess(accessToken?: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -106,7 +107,7 @@ export default function AdminLoginPage() {
     setMessage(null);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: passwordResetRedirectUrl(),
     });
 
     if (error) {
